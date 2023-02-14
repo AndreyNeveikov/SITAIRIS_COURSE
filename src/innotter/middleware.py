@@ -9,54 +9,41 @@ from user.models import User
 
 
 class JWTAuthMiddleware(MiddlewareMixin):
+    @staticmethod
+    def check_if_access_token_exist(access_token):
+        return access_token and access_token.startswith(settings.AUTH_HEADER_TYPE)
+
     def process_request(self, request):
-        # If user want to log in or register
-        if request.path in settings.AUTH_URL_PATH:
-            return None
+        if request.get_full_path() not in settings.AUTH_URL_PATH:
+            access_token = request.headers.get('Authorization', None)
 
-        # Get token from headers
-        access_token = request.headers.get('Authorization', None)
-
-        if access_token:
-            try:
-                keyword, token_id = access_token.split()
-            except ValueError:
+            if self.check_if_access_token_exist(access_token):
+                try:
+                    payload = jwt.decode(
+                        jwt=access_token.replace(settings.AUTH_HEADER_TYPE, ''),
+                        key=settings.ACCESS_TOKEN_KEY,
+                        algorithms=settings.JWT_ALGORITHM
+                    )
+                    user_uuid = payload.get('user_uuid')
+                    request.user = get_object_or_404(User, uuid=user_uuid)
+                    return None
+                except jwt.ExpiredSignatureError:
+                    return JsonResponse(
+                        data={'message': 'Authentication token has expired'},
+                        status=401
+                    )
+                except (jwt.InvalidTokenError, jwt.DecodeError):
+                    return JsonResponse(
+                        data={'message': 'Authorization has failed. Please send valid token.'},
+                        status=401
+                    )
+            else:
                 return JsonResponse(
                     data={'message': 'Authorization not found. Please send valid token in headers'},
                     status=401
                 )
-            else:
-                if keyword not in settings.AUTH_HEADER_TYPES:
-                    return JsonResponse(
-                        data={'message': 'Authorization not found. Please send valid token in headers'},
-                        status=401
-                    )
 
-            #
-            if request.path in settings.REFRESH_TOKEN_PATH:
-                key = settings.REFRESH_TOKEN_KEY
-            else:
-                key = settings.ACCESS_TOKEN_KEY
-
-
-            auth = BaseJWT(token=token_id)
-
-            # Get payload
-            try:
-                payload = auth.decode(key=key)
-            except jwt.ExpiredSignatureError:
-                return JsonResponse({'message': 'token expired error'}, status=401)
-            except (jwt.InvalidTokenError, jwt.DecodeError):
-                return JsonResponse({'message': 'token invalid error'}, status=401)
-            else:
-                user_uuid = payload.get('user_uuid')
-                request.user = get_object_or_404(User, uuid=user_uuid)
-                return None
-        else:
-            return JsonResponse(
-                data={'message': 'Authorization not found. Please send valid token in headers'},
-                status=401
-            )
+        return None
 
 
 class BaseJWT:
@@ -97,43 +84,3 @@ class BaseJWT:
                            algorithm=settings.JWT_ALGORITHM)
 
         return token
-
-
-# class JWTAuthMiddleware(MiddlewareMixin):
-#     def process_request(self, request):  # noqa
-#
-#         # If user want to log in or register
-#         if request.path in settings.AUTH_URL_PATH:
-#             return None
-#
-#         # Get token from headers
-#         access_token = request.headers.get('Authorization', None)
-#
-#         # Validate token
-#         try:
-#             keyword, token_id = access_token.split()
-#             if keyword not in settings.AUTH_HEADER_TYPES:
-#                 return JsonResponse(
-#                     data={'message': 'Authorization not found. Please send valid token in headers'},
-#                     status=401
-#                 )
-#
-#         except (ValueError, AttributeError):
-#             return JsonResponse(
-#                 data={'message': 'Authorization not found. Please send valid token in headers'},
-#                 status=401
-#             )
-#
-#         # Get payload
-#         try:
-#             payload = jwt.decode(jwt=token_id,
-#                                  key=settings.SECRET_KEY,
-#                                  algorithms=settings.JWT_ALGORITHM)
-#         except jwt.ExpiredSignatureError:
-#             return JsonResponse({'message': 'token expired error'}, status=401)
-#         except (jwt.InvalidTokenError, jwt.DecodeError):
-#             return JsonResponse({'message': 'token invalid error'}, status=401)
-#         else:
-#             user_uuid = payload.get('user_uuid')
-#             request.user = get_object_or_404(User, uuid=user_uuid)
-#             return None

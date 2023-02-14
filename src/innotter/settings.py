@@ -136,9 +136,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'user.User'
 
 # PYJWT
-AUTH_URL_PATH = ('/auth/login/', '/auth/register/')
-AUTH_HEADER_TYPES = ('Bearer',)
-REFRESH_TOKEN_PATH = ('auth/refresh/',)
+AUTH_URL_PATH = ('/auth/login/', '/auth/register/', '/auth/refresh/')
+AUTH_HEADER_TYPE = 'Bearer '
 ACCESS_TOKEN_KEY = SECRET_KEY
 REFRESH_TOKEN_KEY = SECRET_KEY * 2
 JWT_ALGORITHM = 'HS256'

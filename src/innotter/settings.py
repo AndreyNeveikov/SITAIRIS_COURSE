@@ -10,8 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 import os
-
+from datetime import datetime, timedelta
 from pathlib import Path
+
+# временно, пока не работает Debug в docker-compose
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -52,6 +57,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'innotter.middleware.JWTAuthMiddleware'
 ]
 
 ROOT_URLCONF = 'innotter.urls'
@@ -128,3 +134,13 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'user.User'
+
+# PYJWT
+AUTH_URL_PATH = ('/auth/login/', '/auth/register/')
+AUTH_HEADER_TYPES = ('Bearer',)
+REFRESH_TOKEN_PATH = ('auth/refresh/',)
+ACCESS_TOKEN_KEY = SECRET_KEY
+REFRESH_TOKEN_KEY = SECRET_KEY * 2
+JWT_ALGORITHM = 'HS256'
+ACCESS_TOKEN_LIFETIME = datetime.now() + timedelta(days=1)
+REFRESH_TOKEN_LIFETIME = datetime.now() + timedelta(days=5)

@@ -4,7 +4,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 from core.constants import Roles
-from .managers import CustomUserManager
+from user.managers import CustomUserManager
 
 
 class User(AbstractUser):

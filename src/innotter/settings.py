@@ -137,7 +137,7 @@ AUTH_USER_MODEL = 'user.User'
 
 # PYJWT
 AUTH_URL_PATH = ('/auth/login/', '/auth/register/', '/auth/refresh/')
-AUTH_HEADER_TYPE = 'Bearer '
+AUTH_HEADER_PREFIX = 'Bearer '
 ACCESS_TOKEN_KEY = SECRET_KEY
 REFRESH_TOKEN_KEY = SECRET_KEY * 2
 JWT_ALGORITHM = 'HS256'

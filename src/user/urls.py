@@ -1,10 +1,9 @@
 from django.urls import path
 
-from .views import RegistrationAPIView, LoginAPIView, HelloView
+from user.views import RegistrationAPIView, LoginAPIView, RefreshTokenAPIView
 
 urlpatterns = [
     path('register/', RegistrationAPIView.as_view()),
     path('login/', LoginAPIView.as_view()),
-    path('hello/', HelloView.as_view())
-    # path('refresh/', ),
+    path('refresh/', RefreshTokenAPIView.as_view()),
 ]

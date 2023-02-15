@@ -24,7 +24,7 @@ class CustomUserManager(UserManager):
             user.save()
             return user
 
-        user.is_staff = True
+        user.is_staff = False
         user.is_superuser = False
         user.save()
         return user

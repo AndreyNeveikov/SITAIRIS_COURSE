@@ -6,7 +6,7 @@ services:
     container_name: web
     restart: always
     volumes:
-      - ./src/:/code
+      - .:/code
     ports:
       - "8000:8000"
     env_file:

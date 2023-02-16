@@ -143,3 +143,8 @@ REFRESH_TOKEN_KEY = SECRET_KEY * 2
 JWT_ALGORITHM = 'HS256'
 ACCESS_TOKEN_LIFETIME = datetime.now() + timedelta(days=1)
 REFRESH_TOKEN_LIFETIME = datetime.now() + timedelta(days=5)
+
+
+# Redis
+REDIS_HOST = os.getenv('REDIS_HOST')
+REDIS_PORT = int(os.getenv('REDIS_PORT'))

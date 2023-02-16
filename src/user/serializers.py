@@ -1,8 +1,10 @@
 import jwt
+
 from django.contrib.auth import authenticate
 from rest_framework import serializers
 
 from innotter import settings
+from innotter.redis import redis
 from user.models import User
 
 
@@ -56,10 +58,12 @@ class LoginSerializer(serializers.Serializer):  # noqa
         """
         Creating tokens for user
         """
+        uuid = validated_data['user'].uuid
+
         access_payload = {
             'token_type': 'access',
             'exp': settings.ACCESS_TOKEN_LIFETIME,
-            'user_uuid': str(validated_data['user'].uuid)
+            'user_uuid': str(uuid)
         }
         access_token = jwt.encode(payload=access_payload,
                                   key=settings.ACCESS_TOKEN_KEY,
@@ -68,11 +72,14 @@ class LoginSerializer(serializers.Serializer):  # noqa
         refresh_payload = {
             'token_type': 'refresh',
             'exp': settings.REFRESH_TOKEN_LIFETIME,
-            'user_uuid': str(validated_data['user'].uuid)
+            'user_uuid': str(uuid)
         }
         refresh_token = jwt.encode(payload=refresh_payload,
                                    key=settings.REFRESH_TOKEN_KEY,
                                    algorithm=settings.JWT_ALGORITHM)
+
+        redis.set(name=str(uuid),
+                  value=settings.AUTH_HEADER_PREFIX + refresh_token)
 
         return {
             'access_token': access_token,
@@ -109,6 +116,27 @@ class RefreshTokenSerializer(serializers.Serializer):  # noqa
                 raise serializers.ValidationError(
                     'Token type is not refresh.'
                 )
+
+            # Get user uuid from payload
+            uuid = payload['user_uuid']
+
+            # Get token from redis
+            redis_refresh_token = redis.get(uuid)
+
+            # If no token
+            if not redis_refresh_token:
+                raise serializers.ValidationError(
+                    'Refresh token is not found'
+                )
+
+            # Decoding to string
+            redis_refresh_token = redis_refresh_token.decode('utf-8')
+
+            if redis_refresh_token != refresh_token:
+                raise serializers.ValidationError(
+                    'Refresh token is invalid'
+                )
+
             validated_data['payload'] = payload
         except jwt.ExpiredSignatureError:
             raise serializers.ValidationError(

@@ -17,16 +17,16 @@ class CustomUserManager(UserManager):
         user.username = username
         user.role = role
         user.is_blocked = is_blocked
+        user.is_staff = False
+        user.is_superuser = False
+        user.save()
 
         if user.role == Roles.MODERATOR.value:
             user.is_staff = True
             user.is_superuser = False
-            user.save()
+            user.save(update_fields=('is_staff', 'is_superuser'))
             return user
 
-        user.is_staff = False
-        user.is_superuser = False
-        user.save()
         return user
 
     def create_superuser(self, username: str, email: str = None, password: str = None,

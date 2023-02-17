@@ -1,15 +1,20 @@
-import jwt
-
-from django.contrib.auth import authenticate
+from django.contrib.auth.models import update_last_login
 from rest_framework import serializers
+from rest_framework.generics import get_object_or_404
 
+from core.exceptions import InvalidTokenError, NoTokenError
 from innotter import settings
+from innotter.jwt_service import (validate_token,
+                                  decode_refresh_token,
+                                  generate_jwt_token_dict)
 from innotter.redis import redis
 from user.models import User
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(max_length=128, min_length=8, write_only=True)
+    password = serializers.CharField(max_length=128,
+                                     min_length=8,
+                                     write_only=True)
 
     class Meta:
         model = User
@@ -20,146 +25,84 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):  # noqa
-    email = serializers.CharField(max_length=255)
+    email = serializers.CharField(max_length=255, write_only=True)
     password = serializers.CharField(max_length=128, write_only=True)
-    access_token = serializers.CharField(max_length=255, read_only=True)
-    refresh_token = serializers.CharField(max_length=255, read_only=True)
-
-    def validate(self, data):
-        email = data.get('email', None)
-        password = data.get('password', None)
-
-        if email is None:
-            raise serializers.ValidationError(
-                'An email address is required to log in.'
-            )
-
-        if password is None:
-            raise serializers.ValidationError(
-                'A password is required to log in.'
-            )
-
-        user = authenticate(username=email, password=password)
-
-        if user is None:
-            raise serializers.ValidationError(
-                'A user with this email and password was not found.'
-            )
-
-        if not user.is_active:
-            raise serializers.ValidationError(
-                'This user has been deactivated.'
-            )
-
-        data['user'] = user
-        return data
-
-    def create(self, validated_data):
-        """
-        Creating tokens for user
-        """
-        uuid = validated_data['user'].uuid
-
-        access_payload = {
-            'token_type': 'access',
-            'exp': settings.ACCESS_TOKEN_LIFETIME,
-            'user_uuid': str(uuid)
-        }
-        access_token = jwt.encode(payload=access_payload,
-                                  key=settings.ACCESS_TOKEN_KEY,
-                                  algorithm=settings.JWT_ALGORITHM)
-
-        refresh_payload = {
-            'token_type': 'refresh',
-            'exp': settings.REFRESH_TOKEN_LIFETIME,
-            'user_uuid': str(uuid)
-        }
-        refresh_token = jwt.encode(payload=refresh_payload,
-                                   key=settings.REFRESH_TOKEN_KEY,
-                                   algorithm=settings.JWT_ALGORITHM)
-
-        redis.set(name=str(uuid),
-                  value=settings.AUTH_HEADER_PREFIX + refresh_token)
-
-        return {
-            'access_token': access_token,
-            'refresh_token': refresh_token
-        }
-
-
-class RefreshTokenSerializer(serializers.Serializer):  # noqa
-    refresh_token = serializers.CharField(required=True, write_only=True)
-    access = serializers.CharField(read_only=True)
-    refresh = serializers.CharField(read_only=True)
-
-    @staticmethod
-    def check_if_access_token_exist(refresh_token):
-        return refresh_token and refresh_token.startswith(settings.AUTH_HEADER_PREFIX)
+    access = serializers.CharField(max_length=255, read_only=True)
+    refresh = serializers.CharField(max_length=255, read_only=True)
 
     def validate(self, data):
         validated_data = super().validate(data)
+        user = self.context['request'].user
+        password = validated_data.get('password', None)
 
-        refresh_token = validated_data.get('refresh_token', None)
-
-        if not self.check_if_access_token_exist(refresh_token):
+        if not user:
             raise serializers.ValidationError(
-                'Authorization not found. Please send valid token in headers'
+                {'error': 'No user exists with such email.'}
             )
 
-        try:
-            payload = jwt.decode(
-                jwt=refresh_token.replace(settings.AUTH_HEADER_PREFIX, ''),
-                key=settings.REFRESH_TOKEN_KEY,
-                algorithms=settings.JWT_ALGORITHM
-            )
-            if payload.get('token_type') != 'refresh':
-                raise serializers.ValidationError(
-                    'Token type is not refresh.'
-                )
-
-            # Get user uuid from payload
-            uuid = payload['user_uuid']
-
-            # Get token from redis
-            redis_refresh_token = redis.get(uuid)
-
-            # If no token
-            if not redis_refresh_token:
-                raise serializers.ValidationError(
-                    'Refresh token is not found'
-                )
-
-            # Decoding to string
-            redis_refresh_token = redis_refresh_token.decode('utf-8')
-
-            if redis_refresh_token != refresh_token:
-                raise serializers.ValidationError(
-                    'Refresh token is invalid'
-                )
-
-            validated_data['payload'] = payload
-        except jwt.ExpiredSignatureError:
+        if not user.check_password(password):
             raise serializers.ValidationError(
-                'Authentication token has expired.'
+                {'error': 'Invalid password.'}
             )
-        except (jwt.InvalidTokenError, jwt.DecodeError):
+
+        if not user.is_active or user.is_blocked:
             raise serializers.ValidationError(
-                'Authorization has failed. Please send valid token.'
+                {'error': 'User is not active or blocked.'}
             )
+
+        update_last_login(None, user)
+
         return validated_data
 
     def create(self, validated_data):
         """
         Creating tokens for user
         """
-        access_payload = {
-            'token_type': 'access',
-            'exp': settings.ACCESS_TOKEN_LIFETIME,
-            'user_uuid': str(validated_data['payload']['user_uuid'])
-        }
-        access_token = jwt.encode(payload=access_payload,
-                                  key=settings.ACCESS_TOKEN_KEY,
-                                  algorithm=settings.JWT_ALGORITHM)
+        user = self.context['request'].user
+        validated_data = generate_jwt_token_dict(user)
+        redis.set(name=str(user.uuid),
+                  value=settings.AUTH_HEADER_PREFIX + validated_data['refresh'])
+
+        return validated_data
+
+
+class RefreshTokenSerializer(serializers.Serializer):  # noqa
+    access = serializers.CharField(read_only=True)
+    refresh = serializers.CharField()
+
+    def validate(self, data):
+        validated_data = super().validate(data)
+        refresh_token = validated_data.get('refresh', None)
+
+        if not validate_token(refresh_token):
+            raise NoTokenError()
+
+        payload = decode_refresh_token(refresh_token)
+        uuid = payload['user_uuid']
+        user = get_object_or_404(User, uuid=uuid)
+
+        redis_refresh_token = redis.get(uuid)
+
+        if not redis_refresh_token:
+            raise InvalidTokenError()
+
+        redis_refresh_token = redis_refresh_token.decode('utf-8')
+
+        if redis_refresh_token != refresh_token:
+            raise InvalidTokenError()
+
+        validated_data['user'] = user
+        return validated_data
+
+    def create(self, validated_data):
+        """
+        Creating tokens for user
+        """
+        user = validated_data['user']
+        validated_data = generate_jwt_token_dict(user)
+        redis.set(name=str(user.uuid),
+                  value=settings.AUTH_HEADER_PREFIX + validated_data['refresh'])
+        return validated_data
 
         refresh_payload = {
             'token_type': 'refresh',

@@ -1,12 +1,9 @@
 from django.contrib.auth.models import update_last_login
 from rest_framework import serializers
-from rest_framework.generics import get_object_or_404
 
-from core.exceptions import InvalidTokenError, NoTokenError
+from core.exceptions import InvalidTokenError
 from innotter import settings
-from innotter.jwt_service import (validate_token,
-                                  decode_refresh_token,
-                                  generate_jwt_token_dict)
+from innotter.jwt_service import RefreshTokenService, AccessTokenService
 from innotter.redis import redis
 from user.models import User
 
@@ -33,7 +30,7 @@ class LoginSerializer(serializers.Serializer):  # noqa
     def validate(self, data):
         validated_data = super().validate(data)
         user = self.context['request'].user
-        password = validated_data.get('password', None)
+        password = validated_data.get('password')
 
         if not user:
             raise serializers.ValidationError(
@@ -50,18 +47,20 @@ class LoginSerializer(serializers.Serializer):  # noqa
                 {'error': 'User is not active or blocked.'}
             )
 
-        update_last_login(None, user)
-
         return validated_data
 
     def create(self, validated_data):
         """
         Creating tokens for user
         """
+        token_service = AccessTokenService(validated_data=validated_data)
         user = self.context['request'].user
-        validated_data = generate_jwt_token_dict(user)
+        validated_data = token_service.generate_jwt_token_dict(user)
+        update_last_login(None, user)
+
+        refresh_token = validated_data['refresh']
         redis.set(name=str(user.uuid),
-                  value=settings.AUTH_HEADER_PREFIX + validated_data['refresh'])
+                  value=settings.AUTH_HEADER_PREFIX + refresh_token)
 
         return validated_data
 
@@ -72,16 +71,12 @@ class RefreshTokenSerializer(serializers.Serializer):  # noqa
 
     def validate(self, data):
         validated_data = super().validate(data)
-        refresh_token = validated_data.get('refresh', None)
+        token_service = RefreshTokenService(validated_data)
+        token_service.is_valid()
+        refresh_token = token_service.token
+        user = token_service.get_user_from_payload()
 
-        if not validate_token(refresh_token):
-            raise NoTokenError()
-
-        payload = decode_refresh_token(refresh_token)
-        uuid = payload['user_uuid']
-        user = get_object_or_404(User, uuid=uuid)
-
-        redis_refresh_token = redis.get(uuid)
+        redis_refresh_token = redis.get(str(user.uuid))
 
         if not redis_refresh_token:
             raise InvalidTokenError()
@@ -98,22 +93,10 @@ class RefreshTokenSerializer(serializers.Serializer):  # noqa
         """
         Creating tokens for user
         """
+        token_service = RefreshTokenService(validated_data)
         user = validated_data['user']
-        validated_data = generate_jwt_token_dict(user)
+        validated_data = token_service.generate_jwt_token_dict(user)
+        refresh_token = validated_data['refresh']
         redis.set(name=str(user.uuid),
-                  value=settings.AUTH_HEADER_PREFIX + validated_data['refresh'])
+                  value=settings.AUTH_HEADER_PREFIX + refresh_token)
         return validated_data
-
-        refresh_payload = {
-            'token_type': 'refresh',
-            'exp': settings.REFRESH_TOKEN_LIFETIME,
-            'user_uuid': str(validated_data['payload']['user_uuid'])
-        }
-        refresh_token = jwt.encode(payload=refresh_payload,
-                                   key=settings.REFRESH_TOKEN_KEY,
-                                   algorithm=settings.JWT_ALGORITHM)
-
-        return {
-            'access_token': access_token,
-            'refresh_token': refresh_token
-        }

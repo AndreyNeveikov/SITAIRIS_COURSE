@@ -1,8 +1,8 @@
+from django.conf import settings
 from django.contrib.auth.models import update_last_login
 from rest_framework import serializers
 
 from core.exceptions import InvalidTokenError
-from innotter import settings
 from innotter.jwt_service import RefreshTokenService, AccessTokenService
 from innotter.redis import redis
 from user.models import User

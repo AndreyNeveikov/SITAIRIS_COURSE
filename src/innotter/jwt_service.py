@@ -1,10 +1,11 @@
 import jwt
+
+from django.conf import settings
 from rest_framework.generics import get_object_or_404
 
-from core.exceptions import TokenExpiredSignatureError, InvalidTokenError, NoTokenError
-from innotter.settings import (AUTH_HEADER_PREFIX, ACCESS_TOKEN_LIFETIME,
-                               ACCESS_TOKEN_KEY, JWT_ALGORITHM,
-                               REFRESH_TOKEN_KEY, REFRESH_TOKEN_LIFETIME)
+from core.exceptions import (TokenExpiredSignatureError,
+                             InvalidTokenError,
+                             NoTokenError)
 from user.models import User
 
 
@@ -21,14 +22,15 @@ class BaseTokenService:
         self.__payload = None
 
     def is_valid(self):
-        if not (self.token and self.token.startswith(AUTH_HEADER_PREFIX)):
+        if not (self.token and
+                self.token.startswith(settings.AUTH_HEADER_PREFIX)):
             raise NoTokenError
 
         try:
             self.__payload = jwt.decode(
-                jwt=self.token.replace(AUTH_HEADER_PREFIX, ''),
+                jwt=self.token.replace(settings.AUTH_HEADER_PREFIX, ''),
                 key=self.KEY,
-                algorithms=JWT_ALGORITHM
+                algorithms=settings.JWT_ALGORITHM
             )
         except jwt.ExpiredSignatureError:
             raise TokenExpiredSignatureError()
@@ -51,49 +53,49 @@ class BaseTokenService:
     def _generate_access_token(user):
         access_payload = {
             'token_type': 'access',
-            'exp': ACCESS_TOKEN_LIFETIME,
+            'exp': settings.ACCESS_TOKEN_LIFETIME,
             'user_uuid': str(user.uuid)
         }
 
         access_token = jwt.encode(payload=access_payload,
-                                  key=ACCESS_TOKEN_KEY,
-                                  algorithm=JWT_ALGORITHM)
+                                  key=settings.ACCESS_TOKEN_KEY,
+                                  algorithm=settings.JWT_ALGORITHM)
         return access_token
 
     @staticmethod
     def _generate_refresh_token(user):
         refresh_payload = {
             'token_type': 'refresh',
-            'exp': REFRESH_TOKEN_LIFETIME,
+            'exp': settings.REFRESH_TOKEN_LIFETIME,
             'user_uuid': str(user.uuid)
         }
         refresh_token = jwt.encode(payload=refresh_payload,
-                                   key=REFRESH_TOKEN_KEY,
-                                   algorithm=JWT_ALGORITHM)
+                                   key=settings.REFRESH_TOKEN_KEY,
+                                   algorithm=settings.JWT_ALGORITHM)
 
         return refresh_token
 
 
 class MiddlewareTokenService(BaseTokenService):
-    KEY = ACCESS_TOKEN_KEY
+    KEY = settings.ACCESS_TOKEN_KEY
 
     def __init__(self, request):
         super().__init__(request=request)
 
 
 class AccessTokenService(BaseTokenService):
-    KEY = ACCESS_TOKEN_KEY
+    KEY = settings.ACCESS_TOKEN_KEY
     TOKEN_TYPE = 'access'
-    TOKEN_LIFETIME = ACCESS_TOKEN_LIFETIME
+    TOKEN_LIFETIME = settings.ACCESS_TOKEN_LIFETIME
 
     def __init__(self, validated_data):
         super().__init__(validated_data=validated_data)
 
 
 class RefreshTokenService(BaseTokenService):
-    KEY = REFRESH_TOKEN_KEY
+    KEY = settings.REFRESH_TOKEN_KEY
     TOKEN_TYPE = 'refresh'
-    TOKEN_LIFETIME = REFRESH_TOKEN_LIFETIME
+    TOKEN_LIFETIME = settings.REFRESH_TOKEN_LIFETIME
 
     def __init__(self, validated_data):
         super().__init__(validated_data=validated_data)

@@ -28,9 +28,10 @@ class LoginSerializer(serializers.Serializer):  # noqa
     refresh = serializers.CharField(max_length=255, read_only=True)
 
     def validate(self, data):
-        validated_data = super().validate(data)
-        user = self.context['request'].user
-        password = validated_data.get('password')
+        password = data.get('password')
+        email = data.get('email')
+
+        user = User.objects.filter(email=email).first()
 
         if not user:
             raise serializers.ValidationError(
@@ -47,14 +48,15 @@ class LoginSerializer(serializers.Serializer):  # noqa
                 {'error': 'User is not active or blocked.'}
             )
 
-        return validated_data
+        data['user'] = user
+        return data
 
     def create(self, validated_data):
         """
         Creating tokens for user
         """
         token_service = AccessTokenService(validated_data=validated_data)
-        user = self.context['request'].user
+        user = validated_data['user']
         validated_data = token_service.generate_jwt_token_dict(user)
         update_last_login(None, user)
 
@@ -70,8 +72,7 @@ class RefreshTokenSerializer(serializers.Serializer):  # noqa
     refresh = serializers.CharField()
 
     def validate(self, data):
-        validated_data = super().validate(data)
-        token_service = RefreshTokenService(validated_data)
+        token_service = RefreshTokenService(data)
         token_service.is_valid()
         refresh_token = token_service.token
         user = token_service.get_user_from_payload()
@@ -86,8 +87,8 @@ class RefreshTokenSerializer(serializers.Serializer):  # noqa
         if redis_refresh_token != refresh_token:
             raise InvalidTokenError()
 
-        validated_data['user'] = user
-        return validated_data
+        data['user'] = user
+        return data
 
     def create(self, validated_data):
         """
@@ -100,3 +101,11 @@ class RefreshTokenSerializer(serializers.Serializer):  # noqa
         redis.set(name=str(user.uuid),
                   value=settings.AUTH_HEADER_PREFIX + refresh_token)
         return validated_data
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'uuid', 'email', 'username', 'first_name',
+                  'last_name', 'image', 'role', 'title', 'is_blocked')
+        read_only_fields = ('role', 'is_blocked')

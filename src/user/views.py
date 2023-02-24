@@ -1,32 +1,76 @@
-from rest_framework.generics import CreateAPIView
-from rest_framework.permissions import AllowAny
+from rest_framework import status, mixins
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet
 
 from user.models import User
+from user.permissions import IsAdmin, IsOwner
 from user.serializers import (RegistrationSerializer,
                               LoginSerializer,
-                              RefreshTokenSerializer)
+                              RefreshTokenSerializer,
+                              UserSerializer)
+from user.services import AdminService
 
 
-class RegistrationAPIView(CreateAPIView):
-    permission_classes = (AllowAny,)
-    serializer_class = RegistrationSerializer
+class UserViewSet(mixins.CreateModelMixin,
+                  mixins.RetrieveModelMixin,
+                  mixins.UpdateModelMixin,
+                  mixins.ListModelMixin,
+                  GenericViewSet):
+    queryset = User.objects.all()
+    permission_action_classes = {
+        'register': [AllowAny],
+        'login': [AllowAny],
+        'refresh': [AllowAny],
+        'update': [IsAuthenticated, IsOwner],
+        'partial_update': [IsAuthenticated, IsOwner],
+        'block_user': [IsAuthenticated, IsAdmin]
+    }
+    serializer_action_classes = {
+        'login': LoginSerializer,
+        'register': RegistrationSerializer,
+        'refresh': RefreshTokenSerializer,
+        'update': UserSerializer
+    }
 
+    def get_serializer_class(self):
+        return self.serializer_action_classes.get(self.action, UserSerializer)
 
-class LoginAPIView(CreateAPIView):
-    permission_classes = (AllowAny,)
-    serializer_class = LoginSerializer
+    def get_permissions(self):
+        permissions = self.permission_action_classes.get(
+            self.action, [IsAuthenticated]
+        )
+        return [permission() for permission in permissions]
 
-    def get_object(self):
-        email = self.request.data.get('email')
-        user = User.objects.filter(email=email).first()
-        return user
+    @action(detail=False, methods=['post'])
+    def login(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(data=serializer.data,
+                        status=status.HTTP_200_OK)
 
-    def post(self, request, *args, **kwargs):
-        user = self.get_object()
-        request.user = user
-        return super().post(request, *args, **kwargs)
+    @action(detail=False, methods=['post'])
+    def refresh(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(data=serializer.data,
+                        status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['post'])
+    def register(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(data=serializer.data,
+                        status=status.HTTP_201_CREATED)
 
-class RefreshTokenAPIView(CreateAPIView):
-    permission_classes = (AllowAny,)
-    serializer_class = RefreshTokenSerializer
+    @action(detail=True, methods=['post'])
+    def block_user(self, request, pk):
+        admin_service = AdminService(pk)
+        admin_service.block_user()
+        message = admin_service.get_message()
+        return Response(data={'status': message},
+                        status=status.HTTP_200_OK)

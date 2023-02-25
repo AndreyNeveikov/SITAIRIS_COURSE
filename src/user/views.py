@@ -13,8 +13,7 @@ from user.serializers import (RegistrationSerializer,
 from user.services import AdminService
 
 
-class UserViewSet(mixins.CreateModelMixin,
-                  mixins.RetrieveModelMixin,
+class UserViewSet(mixins.RetrieveModelMixin,
                   mixins.UpdateModelMixin,
                   mixins.ListModelMixin,
                   GenericViewSet):
@@ -31,7 +30,6 @@ class UserViewSet(mixins.CreateModelMixin,
         'login': LoginSerializer,
         'register': RegistrationSerializer,
         'refresh': RefreshTokenSerializer,
-        'update': UserSerializer
     }
 
     def get_serializer_class(self):
@@ -68,9 +66,9 @@ class UserViewSet(mixins.CreateModelMixin,
                         status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'])
-    def block_user(self, request, pk):
-        admin_service = AdminService(pk)
-        admin_service.block_user()
-        message = admin_service.get_message()
-        return Response(data={'status': message},
+    def block_user(self, request, user_id):
+        admin_service = AdminService(user_id)
+        admin_service.toggle_block_status()
+        response = admin_service.get_block_status_response()
+        return Response(data=response,
                         status=status.HTTP_200_OK)

@@ -14,6 +14,7 @@ services:
     depends_on:
       - db
       - redis
+      - localstack
 
   db:
     image: postgres
@@ -32,6 +33,17 @@ services:
     command: redis-server
     ports:
       - "14000:6379"
+
+  localstack:
+    image: localstack/localstack
+    container_name: localstack
+    ports:
+      - "4566:4566"
+    env_file:
+      - .env
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
 
 volumes:
   pgdata:

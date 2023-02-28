@@ -1,4 +1,5 @@
 from rest_framework import mixins, status
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
@@ -10,7 +11,7 @@ from page.permissions import IsPageOwner, PageIsNotPrivateOrFollower
 from page.serializers import (PageCreateSerializer,
                               TagSerializer,
                               PageOwnerSerializer)
-from page.services import TagService
+from page.services import TagService, PageService
 from user.permissions import IsModerator, IsAdmin
 
 
@@ -81,3 +82,12 @@ class PageViewSet(SerializerActionMixin,
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'])
+    def follow(self, request, *args, **kwargs):
+        page = self.get_object()
+        message = PageService.toggle_follow_status(request, page)
+        return Response(data=message, status=status.HTTP_201_CREATED)
+
+
+

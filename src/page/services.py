@@ -32,3 +32,23 @@ class TagService:
         instance.tags.clear()
         instance.tags.set(tags)
 
+
+class PageService:
+    @staticmethod
+    def toggle_follow_status(request, page):
+        message = ''
+        if request.user not in (*page.followers.all(),
+                                *page.follow_requests.all()):
+            if page.is_private:
+                page.follow_requests.add(request.user)
+                message = {'status': 'Follow request successfully send.'}
+            elif not page.is_private:
+                page.followers.add(request.user)
+                message = {'status': 'Now you follow this page.'}
+        else:
+            page.follow_requests.remove(request.user)
+            page.followers.remove(request.user)
+            message = {'status': 'You are not longer follow this page'}
+
+        return message
+

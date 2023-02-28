@@ -18,11 +18,7 @@ class PageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Page
         fields = ('id', 'name', 'uuid', 'description', 'tags',
-                  'owner', 'followers', 'image', 'is_private',
-                  'follow_requests', 'unblock_date')
-        read_only_fields = ('owner',
-                            'followers',
-                            'unblock_date')
+                  'owner', 'followers', 'image', 'is_private')
 
 
 class PageCreateSerializer(serializers.ModelSerializer):
@@ -35,5 +31,27 @@ class PageCreateSerializer(serializers.ModelSerializer):
                   'owner', 'tags', 'image', 'is_private')
 
 
-class PageUpdateSerializer(PageCreateSerializer):
-    pass
+class FullPageSerializer(serializers.ModelSerializer):
+    tags = TagSerializer(read_only=True, many=True)
+    owner = UserSerializer(read_only=True)
+    followers = UserSerializer(read_only=True, many=True)
+    follow_requests = UserSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = Page
+        fields = ('id', 'name', 'uuid', 'description', 'tags',
+                  'owner', 'followers', 'image', 'is_private',
+                  'follow_requests', 'unblock_date')
+
+
+class PageOwnerSerializer(serializers.ModelSerializer):
+    tags = TagSerializer(many=True)
+    owner = UserSerializer(read_only=True)
+    followers = UserSerializer(many=True)
+
+    class Meta:
+        model = Page
+        fields = ('id', 'name', 'uuid', 'description', 'tags',
+                  'owner', 'followers', 'image', 'is_private',
+                  'follow_requests', 'unblock_date')
+        read_only_fields = ('unblock_date',)

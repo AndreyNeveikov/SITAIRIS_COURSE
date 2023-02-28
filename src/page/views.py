@@ -4,9 +4,12 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from core.serializers import ImageSerializer
+from page.mixins import SerializerActionMixin
 from page.models import Page, Tag
 from page.permissions import IsPageOwner, PageIsNotPrivateOrFollower
-from page.serializers import PageSerializer, PageCreateSerializer, TagSerializer, PageUpdateSerializer
+from page.serializers import (PageCreateSerializer,
+                              TagSerializer,
+                              PageOwnerSerializer)
 from page.services import TagService
 from user.permissions import IsModerator, IsAdmin
 
@@ -17,7 +20,8 @@ class TagViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 
-class PageViewSet(mixins.CreateModelMixin,
+class PageViewSet(SerializerActionMixin,
+                  mixins.CreateModelMixin,
                   mixins.RetrieveModelMixin,
                   mixins.UpdateModelMixin,
                   mixins.ListModelMixin,
@@ -35,17 +39,9 @@ class PageViewSet(mixins.CreateModelMixin,
     }
     serializer_action_classes = {
         'create': PageCreateSerializer,
-        'update': PageUpdateSerializer,
-        'list': PageSerializer,
+        'update': PageOwnerSerializer,
+        'partial_update': PageOwnerSerializer,
     }
-
-    # def get_queryset(self):
-    #     if self.request.user.role == 'user':
-    #         self.queryset.filter()
-    #     ...
-
-    def get_serializer_class(self):
-        return self.serializer_action_classes.get(self.action, PageSerializer)
 
     def get_permissions(self):
         permissions = self.permission_action_classes.get(

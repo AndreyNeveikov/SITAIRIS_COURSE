@@ -1,4 +1,6 @@
 from django.db import models
+from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 
 
 class Tag(models.Model):
@@ -19,4 +21,13 @@ class Page(models.Model):
     is_private = models.BooleanField(default=False)
     follow_requests = models.ManyToManyField(to='user.User',
                                              related_name='requests')
+    is_blocked = models.BooleanField(default=False)
     unblock_date = models.DateTimeField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if self.unblock_date is not None:
+            if self.unblock_date < timezone.now():
+                raise ValidationError(
+                    {'error': 'The date cannot be in the past.'}
+                )
+        super().save(*args, **kwargs)

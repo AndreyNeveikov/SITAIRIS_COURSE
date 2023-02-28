@@ -7,7 +7,7 @@ ALLOWED_IMAGE_EXTENSIONS = ('png', 'jpg', 'jpeg', 'bmp', 'gif')
 
 
 class ImageSerializer(serializers.Serializer):  # noqa
-    image = serializers.FileField()
+    image_file = serializers.FileField()
 
     @staticmethod
     def validate_image(image):
@@ -19,7 +19,9 @@ class ImageSerializer(serializers.Serializer):  # noqa
         return image
 
     def save(self, **kwargs):
-        key = LocalstackManager.upload_file(file=self.validated_data['image'])
+        key = LocalstackManager.upload_file(
+            file=self.validated_data['image_file']
+        )
         image_url = LocalstackManager.create_object_url(key)
         instance = kwargs.get('instance')
         if instance:

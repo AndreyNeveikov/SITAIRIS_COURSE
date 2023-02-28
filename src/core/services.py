@@ -1,14 +1,10 @@
 import logging
-import os
-import io
 import uuid
 
 import boto3
 from botocore.exceptions import ClientError
-from dotenv import load_dotenv
+from django.conf import settings
 
-
-load_dotenv()
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.INFO,
@@ -22,11 +18,11 @@ class LocalstackManager:
         Get credentials from .env
         """
         credentials = {
-            'aws_access_key_id': os.getenv('AWS_ACCESS_KEY_ID'),
-            'aws_secret_access_key': os.getenv('AWS_SECRET_KEY'),
-            'region_name': os.getenv('REGION_NAME'),
-            'endpoint_url': f'{os.getenv("HOSTNAME_EXTERNAL")}:'
-                            f'{os.getenv("PORT_EXTERNAL")}'
+            'aws_access_key_id': settings.AWS_ACCESS_KEY_ID,
+            'aws_secret_access_key': settings.AWS_SECRET_ACCESS_KEY,
+            'region_name': settings.REGION_NAME,
+            'endpoint_url': f'{settings.HOSTNAME_EXTERNAL}:'
+                            f'{settings.PORT_EXTERNAL}'
         }
         return credentials
 
@@ -53,7 +49,7 @@ class LocalstackManager:
             bucket = client.create_bucket(
                 Bucket=bucket_name,
                 CreateBucketConfiguration={
-                    'LocationConstraint': os.getenv('REGION_NAME')
+                    'LocationConstraint': settings.REGION_NAME
                 }
             )
             logger.info(str(bucket))
@@ -69,7 +65,7 @@ class LocalstackManager:
         client = LocalstackManager.get_client('s3')
         try:
             client.upload_fileobj(Fileobj=file.file,
-                                  Bucket=os.getenv('BUCKET_NAME'),
+                                  Bucket=settings.BUCKET_NAME,
                                   Key=key)
         except ClientError as e:
             logger.error(e)
@@ -84,7 +80,7 @@ class LocalstackManager:
         key = LocalstackManager.get_key_from_url(url)
         client = LocalstackManager.get_client('s3')
         try:
-            client.delete_object(Bucket=os.getenv('BUCKET_NAME'),
+            client.delete_object(Bucket=settings.BUCKET_NAME,
                                  Key=key)
         except ClientError as e:
             logger.error(e)
@@ -92,25 +88,10 @@ class LocalstackManager:
 
     @staticmethod
     def get_key_from_url(url):
-        key = url.split(os.getenv('BUCKET_NAME') + '/')[1].split('?')[0]
+        key = url.split(settings.BUCKET_NAME + '/')[1]
         return key
 
     @staticmethod
-    def create_presigned_url(key):
-        bucket_name = os.getenv('BUCKET_NAME')
-
-        client = LocalstackManager.get_client('s3')
-
-        try:
-            response = client.generate_presigned_url(
-                'get_object',
-                Params={'Bucket': bucket_name,
-                        'Key': key},
-                ExpiresIn=os.getenv('EXPIRATION_TIME')
-            )
-        except ClientError as e:
-            logging.error(e)
-            return None
-
-        else:
-            return response.replace('localstack', '0.0.0.0')
+    def create_object_url(key):
+        url = f'http://0.0.0.0:{settings.PORT_EXTERNAL}/{settings.BUCKET_NAME}/{key}'
+        return url

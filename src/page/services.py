@@ -25,3 +25,10 @@ class TagService:
 
         return tags_id
 
+    @staticmethod
+    def set_instance_tags(request, instance):
+        tags_id = TagService.process_tags(request)
+        tags = Tag.objects.filter(id__in=tags_id)
+        instance.tags.clear()
+        instance.tags.set(tags)
+

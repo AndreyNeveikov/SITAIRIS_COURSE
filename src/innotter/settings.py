@@ -145,7 +145,16 @@ JWT_ALGORITHM = 'HS256'
 ACCESS_TOKEN_LIFETIME = datetime.now() + timedelta(days=1)
 REFRESH_TOKEN_LIFETIME = datetime.now() + timedelta(days=5)
 
-
 # Redis
 REDIS_HOST = os.getenv('REDIS_HOST')
 REDIS_PORT = int(os.getenv('REDIS_PORT'))
+
+# Localstack
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+REGION_NAME = os.getenv('REGION_NAME')
+HOSTNAME_EXTERNAL = os.getenv('HOSTNAME_EXTERNAL')
+PORT_EXTERNAL = os.getenv('PORT_EXTERNAL')
+ENDPOINT_URL = f'{HOSTNAME_EXTERNAL}:{PORT_EXTERNAL}'
+BUCKET_NAME = os.getenv('BUCKET_NAME')
+EXPIRATION_TIME = os.getenv('EXPIRATION_TIME')

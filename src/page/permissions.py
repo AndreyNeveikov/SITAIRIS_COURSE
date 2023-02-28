@@ -9,7 +9,7 @@ class IsPageOwner(BasePermission):
         return obj.owner == request.user
 
 
-class IsNotPrivate(BasePermission):
+class PageIsNotPrivateOrFollower(BasePermission):
     message = 'This page is private.'
 
     def has_object_permission(self, request, view, obj):

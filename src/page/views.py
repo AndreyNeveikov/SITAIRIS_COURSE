@@ -4,9 +4,8 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from core.serializers import ImageSerializer
-from core.services import LocalstackManager
 from page.models import Page, Tag
-from page.permissions import IsPageOwner, IsNotPrivate
+from page.permissions import IsPageOwner, PageIsNotPrivateOrFollower
 from page.serializers import PageSerializer, PageCreateSerializer, TagSerializer, PageUpdateSerializer
 from page.services import TagService
 from user.permissions import IsModerator, IsAdmin
@@ -25,7 +24,8 @@ class PageViewSet(mixins.CreateModelMixin,
                   GenericViewSet):
     queryset = Page.objects.all()
     permission_action_classes = {
-        'retrieve': [IsAuthenticated, IsNotPrivate | IsAdmin | IsModerator],
+        'retrieve': [IsAuthenticated,
+                     PageIsNotPrivateOrFollower | IsAdmin | IsModerator],
         'update': [IsAuthenticated, IsPageOwner],
         'partial_update': [IsAuthenticated, IsPageOwner],
         'list': [IsAuthenticated, IsAdmin | IsModerator],
@@ -65,8 +65,7 @@ class PageViewSet(mixins.CreateModelMixin,
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(data=serializer.data,
-                        status=status.HTTP_201_CREATED)
+        return Response(data=serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -74,14 +73,10 @@ class PageViewSet(mixins.CreateModelMixin,
         if 'image' in request.data:
             image_serializer = ImageSerializer(data=request.data)
             image_serializer.is_valid(raise_exception=True)
-            image_url = image_serializer.save()
-            LocalstackManager.delete_file(instance.image)
+            image_url = image_serializer.save(instance=instance)
 
         if 'tags' in request.data:
-            tags_id = TagService.process_tags(request)
-            tags = Tag.objects.filter(id__in=tags_id)
-            instance.tags.clear()
-            instance.tags.set(tags)
+            TagService.set_instance_tags(request, instance)
 
         data = {**request.data, 'image': image_url}
         serializer = self.get_serializer(instance=instance,
@@ -89,5 +84,4 @@ class PageViewSet(mixins.CreateModelMixin,
                                          partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-        return Response(data=serializer.data,
-                        status=status.HTTP_200_OK)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)

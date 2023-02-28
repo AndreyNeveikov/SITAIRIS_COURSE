@@ -20,5 +20,9 @@ class ImageSerializer(serializers.Serializer):  # noqa
 
     def save(self, **kwargs):
         key = LocalstackManager.upload_file(file=self.validated_data['image'])
-        image_url = LocalstackManager.create_presigned_url(key)
+        image_url = LocalstackManager.create_object_url(key)
+        instance = kwargs.get('instance')
+        if instance:
+            LocalstackManager.delete_file(instance.image)
+
         return image_url

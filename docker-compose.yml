@@ -15,6 +15,7 @@ services:
       - db
       - redis
       - localstack
+      - rabbitmq3
 
   db:
     image: postgres
@@ -44,6 +45,24 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
 
+  rabbitmq3:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq3
+    environment:
+      - "RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}"
+      - "RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}"
+    ports:
+      - "${RABBITMQ_PORT}:${RABBITMQ_PORT}"
+      - "${RABBITMQ_MANAGEMENT_PORT}:${RABBITMQ_MANAGEMENT_PORT}"
+
+  celery:
+    build: .
+    container_name: celery
+    restart: always
+    command: celery --workdir src/ -A innotter worker -l info
+    depends_on:
+      - rabbitmq3
+      - web
 
 volumes:
   pgdata:

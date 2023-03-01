@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from user.models import User
-from user.permissions import IsAdmin, IsOwner
+from user.permissions import IsAdmin, IsOwner, IsModerator
 from user.serializers import (RegistrationSerializer,
                               LoginSerializer,
                               RefreshTokenSerializer,
@@ -24,7 +24,8 @@ class UserViewSet(mixins.RetrieveModelMixin,
         'refresh': [AllowAny],
         'update': [IsAuthenticated, IsOwner],
         'partial_update': [IsAuthenticated, IsOwner],
-        'block_user': [IsAuthenticated, IsAdmin]
+        'block_user': [IsAuthenticated, IsAdmin],
+        'list': [IsAuthenticated, IsAdmin | IsModerator]
     }
     serializer_action_classes = {
         'login': LoginSerializer,
@@ -66,8 +67,8 @@ class UserViewSet(mixins.RetrieveModelMixin,
                         status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'])
-    def block_user(self, request, user_id):
-        admin_service = AdminService(user_id)
+    def block_user(self, request, pk):
+        admin_service = AdminService(pk)
         admin_service.toggle_block_status()
         response = admin_service.get_block_status_response()
         return Response(data=response,

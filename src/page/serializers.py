@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from core.serializers import ImageSerializer
+from core.tasks import unblock_page_at_specified_date
 from page.models import Page, Tag
 from user.serializers import UserSerializer
 
@@ -87,6 +88,12 @@ class BlockPageSerializer(serializers.ModelSerializer):
 
     def save(self, **kwargs):
         super().save(**kwargs)
+        if self.instance.unblock_date:
+            unblock_page_at_specified_date.apply_async(
+                args=[self.instance.id],
+                eta=self.instance.unblock_date
+            )
+
         message = {'status': {'page': self.instance.id,
                               'blocked': self.instance.is_blocked,
                               'unblock date': self.instance.unblock_date}

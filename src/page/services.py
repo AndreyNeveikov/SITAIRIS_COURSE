@@ -51,4 +51,3 @@ class PageService:
             message = {'status': 'You are not longer follow this page'}
 
         return message
-

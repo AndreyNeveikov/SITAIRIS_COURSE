@@ -44,6 +44,7 @@ services:
       - .env
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./entrypoint_localstack.sh:/docker-entrypoint-initaws.d/entrypoint_localstack.sh"
 
   rabbitmq3:
     image: rabbitmq:3-management-alpine
@@ -58,8 +59,8 @@ services:
   celery:
     build: .
     container_name: celery
+    entrypoint: ./entrypoint_celery.sh
     restart: always
-    command: celery --workdir src/ -A innotter worker -l info
     depends_on:
       - rabbitmq3
       - web

@@ -6,11 +6,14 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from core.constants import Roles
 from page.models import Page, Tag
-from page.permissions import IsPageOwner, PageIsNotPrivateOrFollower
+from page.permissions import (IsPageOwner, PageIsNotPrivateOrFollower,
+                              IsNotPageOwner, PageIsNotBlocked)
 from page.serializers import (PageCreateSerializer, TagSerializer,
                               PageOwnerSerializer, BlockPageSerializer,
                               FullPageSerializer, PageSerializer,
-                              PageUpdateSerializer)
+                              PageUpdateSerializer,
+                              AcceptFollowRequestSerializer,
+                              DeclineFollowRequestSerializer)
 from page.services import TagService, PageService
 from user.permissions import IsModerator, IsAdmin
 
@@ -28,50 +31,33 @@ class PageViewSet(mixins.CreateModelMixin,
                   GenericViewSet):
     queryset = Page.objects.all()
     permission_action_classes = {
-        'retrieve': [IsAuthenticated,
+        'retrieve': [IsAuthenticated, PageIsNotBlocked,
                      PageIsNotPrivateOrFollower | IsAdmin | IsModerator],
-        'update': [IsAuthenticated, IsPageOwner],
-        'partial_update': [IsAuthenticated, IsPageOwner],
+        'update': [IsAuthenticated, PageIsNotBlocked, IsPageOwner],
+        'partial_update': [IsAuthenticated, PageIsNotBlocked, IsPageOwner],
         'list': [IsAuthenticated, IsAdmin | IsModerator],
         'block_page': [IsAuthenticated, IsAdmin | IsModerator],
-        'allow_current_follow_request': [IsAuthenticated, IsPageOwner],
-        'allow_all_follow_requests': [IsAuthenticated, IsPageOwner]
+        'follow': [IsAuthenticated, PageIsNotBlocked, IsNotPageOwner],
+        'accept_follow_request': [IsAuthenticated, IsPageOwner],
+        'decline_follow_request': [IsAuthenticated, IsPageOwner],
     }
-    serializer_action_classes = {
-        'create': PageCreateSerializer,
-        'update': PageUpdateSerializer,
-        'partial_update': PageUpdateSerializer,
-        'block_page': BlockPageSerializer,
-    }
-
-    def get_queryset(self):
-        if self.request.user.role == Roles.USER.value:
-            return Page.objects.filter(is_blocked=False)
-        return Page.objects.all()
 
     def get_serializer_class(self):
-        if self.action in self.serializer_action_classes:
-            return self.serializer_action_classes.get(self.action)
-
         if self.request.user.role in (Roles.MODERATOR.value,
                                       Roles.ADMIN.value):
             return FullPageSerializer
-
         if self.request.user == self.get_object().owner:
             return PageOwnerSerializer
-
         return PageSerializer
 
     def get_permissions(self):
-        permissions = self.permission_action_classes.get(
-            self.action, [IsAuthenticated]
-        )
+        permissions = self.permission_action_classes.get(self.action)
         return [permission() for permission in permissions]
 
     def create(self, request, *args, **kwargs):
         tags_id = TagService.process_tags(request)
         request.data['tags'] = tags_id
-        serializer = self.get_serializer(data=request.data)
+        serializer = PageCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
@@ -81,9 +67,9 @@ class PageViewSet(mixins.CreateModelMixin,
         if 'tags' in request.data:
             TagService.set_instance_tags(request, instance)
 
-        serializer = self.get_serializer(instance=instance,
-                                         data=request.data,
-                                         partial=True)
+        serializer = PageUpdateSerializer(instance=instance,
+                                          data=request.data,
+                                          partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
@@ -97,7 +83,24 @@ class PageViewSet(mixins.CreateModelMixin,
     @action(detail=True, methods=['post'])
     def block_page(self, request, *args, **kwargs):
         page = self.get_object()
-        serializer = self.get_serializer(instance=page, data=request.data)
+        serializer = BlockPageSerializer(instance=page, data=request.data)
         serializer.is_valid(raise_exception=True)
         message = serializer.save()
         return Response(data=message, status=status.HTTP_202_ACCEPTED)
+
+    def follow_request(self, request, *args, **kwargs):
+        serializer = kwargs['serializer'](data=request.data,
+                                          instance=self.get_object())
+        serializer.is_valid(raise_exception=True)
+        message = serializer.save()
+        return Response(data=message, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    def accept_follow_request(self, request, *args, **kwargs):
+        return self.follow_request(request, *args, **kwargs,
+                                   serializer=AcceptFollowRequestSerializer)
+
+    @action(detail=True, methods=['post'])
+    def decline_follow_request(self, request, *args, **kwargs):
+        return self.follow_request(request, *args, **kwargs,
+                                   serializer=DeclineFollowRequestSerializer)

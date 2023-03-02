@@ -1,8 +1,8 @@
 from rest_framework import serializers
 
 from core.serializers import ImageSerializer
-from core.tasks import unblock_page_at_specified_date
 from page.models import Page, Tag
+from page.services import PageService
 from user.serializers import UserSerializer
 
 
@@ -10,17 +10,6 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ('id', 'name')
-
-
-class PageSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(many=True, read_only=True)
-    owner = UserSerializer(read_only=True)
-    followers = UserSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Page
-        fields = ('id', 'name', 'uuid', 'description', 'tags',
-                  'owner', 'followers', 'image', 'is_private')
 
 
 class PageCreateSerializer(serializers.ModelSerializer):
@@ -51,30 +40,29 @@ class PageUpdateSerializer(PageCreateSerializer):
         return data
 
 
-class FullPageSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(read_only=True, many=True)
+class PageSerializer(serializers.ModelSerializer):
+    tags = TagSerializer(many=True, read_only=True)
     owner = UserSerializer(read_only=True)
-    followers = UserSerializer(read_only=True, many=True)
-    follow_requests = UserSerializer(read_only=True, many=True)
 
     class Meta:
         model = Page
         fields = ('id', 'name', 'uuid', 'description', 'tags',
-                  'owner', 'followers', 'image', 'is_private',
-                  'follow_requests', 'is_blocked', 'unblock_date')
+                  'owner', 'followers', 'image', 'is_private')
 
 
-class PageOwnerSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(many=True)
-    owner = UserSerializer(read_only=True)
-    followers = UserSerializer(many=True)
-
+class FullPageSerializer(PageSerializer):
     class Meta:
         model = Page
-        fields = ('id', 'name', 'uuid', 'description', 'tags',
-                  'owner', 'followers', 'image', 'is_private',
-                  'follow_requests', 'is_blocked', 'unblock_date')
-        read_only_fields = ('is_blocked', 'unblock_date')
+        fields = ('id', 'name', 'uuid', 'description', 'tags', 'owner',
+                  'followers', 'image', 'is_private', 'follow_requests',
+                  'is_blocked', 'unblock_date')
+
+
+class PageOwnerSerializer(PageSerializer):
+    class Meta:
+        model = Page
+        fields = ('id', 'name', 'uuid', 'description', 'tags', 'owner',
+                  'followers', 'image', 'is_private', 'follow_requests')
 
 
 class BlockPageSerializer(serializers.ModelSerializer):
@@ -89,13 +77,33 @@ class BlockPageSerializer(serializers.ModelSerializer):
     def save(self, **kwargs):
         super().save(**kwargs)
         if self.instance.unblock_date:
-            unblock_page_at_specified_date.apply_async(
-                args=[self.instance.id],
-                eta=self.instance.unblock_date
-            )
+            PageService.unblock_page_task(self.instance)
+        message = PageService.get_block_status_message(self.instance)
+        return message
 
-        message = {'status': {'page': self.instance.id,
-                              'blocked': self.instance.is_blocked,
-                              'unblock date': self.instance.unblock_date}
-                   }
+
+class AcceptFollowRequestSerializer(serializers.Serializer):  # noqa
+    follow_requests = serializers.IntegerField()
+
+    def validate(self, data):
+        user_id = data['follow_requests']
+        if not self.instance.follow_requests.filter(id=user_id):
+            raise serializers.ValidationError({
+                'error': 'User not in the follow requests list.'
+            })
+        return data
+
+    def update(self, instance, validated_data):
+        user_id = validated_data.pop('follow_requests')
+        instance.follow_requests.remove(user_id)
+        instance.followers.add(user_id)
+        message = {'status': {'user': user_id, 'accepted': True}}
+        return message
+
+
+class DeclineFollowRequestSerializer(AcceptFollowRequestSerializer):  # noqa
+    def update(self, instance, validated_data):
+        user_id = validated_data.pop('follow_requests')
+        instance.follow_requests.remove(user_id)
+        message = {'status': {'user': user_id, 'decline': True}}
         return message

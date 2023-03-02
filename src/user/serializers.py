@@ -5,6 +5,7 @@ from rest_framework import serializers
 from core.exceptions import InvalidTokenError
 from innotter.jwt_service import RefreshTokenService, AccessTokenService
 from innotter.redis import redis
+from page.models import Page
 from user.models import User
 
 
@@ -104,8 +105,15 @@ class RefreshTokenSerializer(serializers.Serializer):  # noqa
 
 
 class UserSerializer(serializers.ModelSerializer):
+    following = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ('id', 'uuid', 'email', 'username', 'first_name',
-                  'last_name', 'image', 'role', 'title', 'is_blocked')
+        fields = ('id', 'uuid', 'email', 'username', 'first_name', 'last_name',
+                  'image', 'role', 'title', 'following', 'is_blocked')
         read_only_fields = ('role', 'is_blocked')
+
+    @staticmethod
+    def get_following(obj):
+        following = Page.objects.filter(followers=obj)
+        return following.values_list('id', flat=True)

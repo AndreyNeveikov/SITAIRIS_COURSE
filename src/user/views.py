@@ -1,11 +1,10 @@
 from rest_framework import status, mixins
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from core.permissions import IsAdmin, IsModerator
-from core.serializers import ImageSerializer
+from core.permissions import IsAdmin, IsModerator, IsAuthAndNotBlocked
 from user.models import User
 from user.permissions import IsOwner
 from user.serializers import (LoginSerializer,
@@ -25,10 +24,10 @@ class UserViewSet(mixins.RetrieveModelMixin,
         'create': [AllowAny],
         'login': [AllowAny],
         'refresh': [AllowAny],
-        'update': [IsAuthenticated, IsOwner],
-        'partial_update': [IsAuthenticated, IsOwner],
-        'block_user': [IsAuthenticated, IsAdmin],
-        'list': [IsAuthenticated, IsAdmin | IsModerator]
+        'update': [IsAuthAndNotBlocked, IsOwner],
+        'partial_update': [IsAuthAndNotBlocked, IsOwner],
+        'block_user': [IsAuthAndNotBlocked, IsAdmin],
+        'list': [IsAuthAndNotBlocked, IsAdmin | IsModerator]
     }
     serializer_action_classes = {
         'login': LoginSerializer,
@@ -43,7 +42,7 @@ class UserViewSet(mixins.RetrieveModelMixin,
 
     def get_permissions(self):
         permissions = self.permission_action_classes.get(
-            self.action, [IsAuthenticated]
+            self.action, [IsAuthAndNotBlocked]
         )
         return [permission() for permission in permissions]
 

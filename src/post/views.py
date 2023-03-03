@@ -1,10 +1,9 @@
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from core.permissions import IsAdmin, IsModerator
+from core.permissions import IsAdmin, IsModerator, IsAuthAndNotBlocked
 from post.models import Post
 from post.permissions import IsPostOwner
 from post.serializers import (PostSerializer, PostCreateSerializer,
@@ -17,10 +16,10 @@ class PostViewSet(ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_action_classes = {
-        'update': [IsPostOwner],
-        'partial_update': [IsPostOwner],
-        'destroy': [IsPostOwner | IsAdmin | IsModerator],
-        'list': [IsAuthenticated, IsAdmin | IsModerator],
+        'update': [IsAuthAndNotBlocked, IsPostOwner],
+        'partial_update': [IsAuthAndNotBlocked, IsPostOwner],
+        'destroy': [IsAuthAndNotBlocked, IsPostOwner | IsAdmin | IsModerator],
+        'list': [IsAuthAndNotBlocked, IsAdmin | IsModerator],
     }
     serializer_action_classes = {
         'create': PostCreateSerializer,
@@ -30,7 +29,7 @@ class PostViewSet(ModelViewSet):
 
     def get_permissions(self):
         permissions_for_action = self.permission_action_classes.get(
-            self.action, [IsAuthenticated]
+            self.action, [IsAuthAndNotBlocked]
         )
         return [permission() for permission in permissions_for_action]
 

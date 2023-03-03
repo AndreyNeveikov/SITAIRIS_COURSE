@@ -1,11 +1,10 @@
 from rest_framework import mixins, status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from core.constants import Roles
-from core.permissions import IsAdmin, IsModerator
+from core.permissions import IsAdmin, IsModerator, IsAuthAndNotBlocked
 from page.models import Page
 from page.permissions import (IsPageOwner, PageIsNotBlocked,
                               PageIsNotPrivateOrFollower)
@@ -26,15 +25,15 @@ class PageViewSet(mixins.CreateModelMixin,
                   GenericViewSet):
     queryset = Page.objects.all()
     permission_action_classes = {
-        'retrieve': [IsAuthenticated, PageIsNotBlocked,
+        'retrieve': [IsAuthAndNotBlocked, PageIsNotBlocked,
                      PageIsNotPrivateOrFollower | IsAdmin | IsModerator],
-        'update': [IsAuthenticated, PageIsNotBlocked, IsPageOwner],
-        'partial_update': [IsAuthenticated, PageIsNotBlocked, IsPageOwner],
-        'list': [IsAuthenticated, IsAdmin | IsModerator],
-        'block_page': [IsAuthenticated, IsAdmin | IsModerator],
-        'follow': [IsAuthenticated, PageIsNotBlocked],
-        'accept_follow_request': [IsAuthenticated, IsPageOwner],
-        'decline_follow_request': [IsAuthenticated, IsPageOwner],
+        'update': [IsAuthAndNotBlocked, PageIsNotBlocked, IsPageOwner],
+        'partial_update': [IsAuthAndNotBlocked, PageIsNotBlocked, IsPageOwner],
+        'list': [IsAuthAndNotBlocked, IsAdmin | IsModerator],
+        'block_page': [IsAuthAndNotBlocked, IsAdmin | IsModerator],
+        'follow': [IsAuthAndNotBlocked, PageIsNotBlocked],
+        'accept_follow_request': [IsAuthAndNotBlocked, IsPageOwner],
+        'decline_follow_request': [IsAuthAndNotBlocked, IsPageOwner],
     }
     serializer_action_classes = {
         'create': PageCreateSerializer,
@@ -54,7 +53,7 @@ class PageViewSet(mixins.CreateModelMixin,
 
     def get_permissions(self):
         permissions = self.permission_action_classes.get(
-            self.action, [IsAuthenticated]
+            self.action, [IsAuthAndNotBlocked]
         )
         return [permission() for permission in permissions]
 

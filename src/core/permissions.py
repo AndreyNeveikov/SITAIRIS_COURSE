@@ -27,3 +27,12 @@ class IsAdmin(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return request.user.role == Roles.ADMIN.value
+
+
+class IsAuthAndNotBlocked(BasePermission):
+    message = 'Authentication credentials were not provided or user is blocked'
+
+    def has_permission(self, request, view):
+        return bool(request.user and
+                    request.user.is_authenticated and
+                    not request.user.is_blocked)

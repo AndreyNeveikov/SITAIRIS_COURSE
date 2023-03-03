@@ -3,13 +3,14 @@ from django.contrib.auth.models import update_last_login
 from rest_framework import serializers
 
 from core.exceptions import InvalidTokenError
+from core.serializers import ImageInternalValueMixin
 from innotter.jwt_service import RefreshTokenService, AccessTokenService
 from innotter.redis import redis
 from page.models import Page
 from user.models import User
 
 
-class RegistrationSerializer(serializers.ModelSerializer):
+class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(max_length=128,
                                      min_length=8,
                                      write_only=True)
@@ -20,6 +21,26 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
+
+
+class UserUpdateSerializer(ImageInternalValueMixin,
+                           serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'uuid', 'email', 'username', 'first_name',
+                  'last_name', 'password', 'image', 'role', 'title')
+        read_only_fields = ('id', 'email', 'role')
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        super().update(instance, validated_data)
+        if password:
+            instance.set_password(password)
+            instance.save()
+        return instance
 
 
 class LoginSerializer(serializers.Serializer):  # noqa

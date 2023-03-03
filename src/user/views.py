@@ -4,18 +4,21 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from core.permissions import IsAdmin, IsModerator, IsOwner
+from core.permissions import IsAdmin, IsModerator
+from core.serializers import ImageSerializer
 from user.models import User
-from user.serializers import (RegistrationSerializer,
-                              LoginSerializer,
+from user.permissions import IsOwner
+from user.serializers import (LoginSerializer,
                               RefreshTokenSerializer,
-                              UserSerializer)
+                              UserSerializer, UserUpdateSerializer,
+                              UserCreateSerializer)
 from user.services import AdminService
 
 
 class UserViewSet(mixins.RetrieveModelMixin,
                   mixins.UpdateModelMixin,
                   mixins.ListModelMixin,
+                  mixins.CreateModelMixin,
                   GenericViewSet):
     queryset = User.objects.all()
     permission_action_classes = {
@@ -29,8 +32,10 @@ class UserViewSet(mixins.RetrieveModelMixin,
     }
     serializer_action_classes = {
         'login': LoginSerializer,
-        'register': RegistrationSerializer,
         'refresh': RefreshTokenSerializer,
+        'create': UserCreateSerializer,
+        'update': UserUpdateSerializer,
+        'partial_update': UserUpdateSerializer
     }
 
     def get_serializer_class(self):
@@ -57,14 +62,6 @@ class UserViewSet(mixins.RetrieveModelMixin,
         serializer.save()
         return Response(data=serializer.data,
                         status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=['post'])
-    def register(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(data=serializer.data,
-                        status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'])
     def block_user(self, request, pk):

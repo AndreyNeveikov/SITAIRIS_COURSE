@@ -1,8 +1,8 @@
 from rest_framework import serializers
 
-from core.serializers import ImageSerializer
+from core.serializers import ImageInternalValueMixin
 from page.models import Page, Tag
-from page.services import PageService
+from page.services import PageService, TagService
 from user.serializers import UserSerializer
 
 
@@ -12,32 +12,26 @@ class TagSerializer(serializers.ModelSerializer):
         fields = ('id', 'name')
 
 
-class PageCreateSerializer(serializers.ModelSerializer):
-    image_file = ImageSerializer(read_only=True)
-    owner = serializers.HiddenField(default=serializers.CurrentUserDefault())
-
+class PageCreateSerializer(ImageInternalValueMixin,
+                           serializers.ModelSerializer):
     class Meta:
         model = Page
-        fields = ('id', 'uuid', 'name', 'description', 'image_file',
+        fields = ('id', 'uuid', 'name', 'description',
                   'owner', 'tags', 'image', 'is_private')
+        read_only_fields = ('owner',)
 
-    def validate(self, data):
-        if 'image_file' in self.initial_data:
-            serializer = ImageSerializer(data=self.initial_data)
-            serializer.is_valid(raise_exception=True)
-            image_url = serializer.save()
-            data['image'] = image_url
-        return data
+    def to_internal_value(self, data):
+        tags_id = TagService.process_tags(data)
+        if tags_id:
+            data['tags'] = tags_id
+        return super().to_internal_value(data)
 
 
 class PageUpdateSerializer(PageCreateSerializer):
-    def validate(self, data):
-        if 'image_file' in self.initial_data:
-            serializer = ImageSerializer(data=self.initial_data)
-            serializer.is_valid(raise_exception=True)
-            image_url = serializer.save(instance=self.instance)
-            data['image'] = image_url
-        return data
+    def to_internal_value(self, data):
+        if 'tags' in data:
+            self.instance.tags.clear()
+        return super().to_internal_value(data)
 
 
 class PageSerializer(serializers.ModelSerializer):

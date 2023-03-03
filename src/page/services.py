@@ -4,7 +4,7 @@ from page.models import Tag
 
 class TagService:
     @staticmethod
-    def process_tags(request) -> list:
+    def process_tags(data) -> list:
         """
         Add tags ids to the tags_id list. If tag does not exist, the method
         creates a new tag and add its id to the tags_id list. Returns list
@@ -12,8 +12,8 @@ class TagService:
         """
         tags_id = []
 
-        if 'tags' in request.data:
-            tags = request.data.pop('tags')
+        if 'tags' in data:
+            tags = data.pop('tags')
             existing_tags = Tag.objects.filter(name__in=tags)
             for tag in existing_tags:
                 tags_id.append(tag.id)
@@ -25,16 +25,6 @@ class TagService:
                 tags_id.append(new_tag.id)
 
         return tags_id
-
-    @staticmethod
-    def set_instance_tags(request, page):
-        """
-        Set page instance tags.
-        """
-        tags_id = TagService.process_tags(request)
-        tags = Tag.objects.filter(id__in=tags_id)
-        page.tags.clear()
-        page.tags.set(tags)
 
 
 class PageService:

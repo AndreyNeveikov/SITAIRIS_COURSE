@@ -11,7 +11,7 @@ class Page(models.Model):
     name = models.CharField(max_length=80)
     uuid = models.CharField(max_length=30, unique=True)
     description = models.TextField()
-    tags = models.ManyToManyField(to=Tag, related_name='pages')
+    tags = models.ManyToManyField(to=Tag, related_name='pages', blank=True)
     owner = models.ForeignKey(to='user.User',
                               on_delete=models.CASCADE,
                               related_name='pages')

@@ -22,7 +22,7 @@ class UserViewSet(mixins.RetrieveModelMixin,
                   GenericViewSet):
     queryset = User.objects.all()
     permission_action_classes = {
-        'register': [AllowAny],
+        'create': [AllowAny],
         'login': [AllowAny],
         'refresh': [AllowAny],
         'update': [IsAuthenticated, IsOwner],

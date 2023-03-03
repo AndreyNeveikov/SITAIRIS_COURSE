@@ -6,8 +6,7 @@ from rest_framework.viewsets import GenericViewSet
 from core.constants import Roles
 from core.permissions import IsAdmin, IsModerator, IsAuthAndNotBlocked
 from page.models import Page
-from page.permissions import (IsPageOwner, PageIsNotBlocked,
-                              PageIsNotPrivateOrFollower)
+from page.permissions import IsPageOwner, PageIsNotBlocked
 from page.serializers import (PageCreateSerializer, PageOwnerSerializer,
                               BlockPageSerializer, FullPageSerializer,
                               PageSerializer, PageUpdateSerializer,
@@ -25,8 +24,8 @@ class PageViewSet(mixins.CreateModelMixin,
                   GenericViewSet):
     queryset = Page.objects.all()
     permission_action_classes = {
-        'retrieve': [IsAuthAndNotBlocked, PageIsNotBlocked,
-                     PageIsNotPrivateOrFollower | IsAdmin | IsModerator],
+        'retrieve': [IsAuthAndNotBlocked, IsPageOwner, PageIsNotBlocked |
+                     IsAdmin | IsModerator],
         'update': [IsAuthAndNotBlocked, PageIsNotBlocked, IsPageOwner],
         'partial_update': [IsAuthAndNotBlocked, PageIsNotBlocked, IsPageOwner],
         'list': [IsAuthAndNotBlocked, IsAdmin | IsModerator],
@@ -96,3 +95,8 @@ class PageViewSet(mixins.CreateModelMixin,
         posts = Post.objects.filter(page=pk)
         serializer = PostSerializer(instance=posts, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+
+class FeedViewSet(mixins.ListModelMixin,
+                  GenericViewSet):
+    ...

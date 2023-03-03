@@ -1,5 +1,9 @@
-from rest_framework import serializers
+from collections import OrderedDict
 
+from rest_framework import serializers
+from rest_framework.permissions import IsAuthenticated
+
+from core.constants import Roles
 from core.serializers import ImageInternalValueMixin
 from page.models import Page, Tag
 from page.services import PageService, TagService
@@ -42,6 +46,15 @@ class PageSerializer(serializers.ModelSerializer):
         model = Page
         fields = ('id', 'name', 'uuid', 'description', 'tags',
                   'owner', 'followers', 'image', 'is_private')
+
+    def to_representation(self, instance):
+        if isinstance(self, (FullPageSerializer, PageOwnerSerializer)):
+            return super().to_representation(instance)
+        user = self.context['request'].user
+        if user in instance.followers.all() or not instance.is_private:
+            return super().to_representation(instance)
+        ret = {'is_private': instance.is_private}
+        return ret
 
 
 class FullPageSerializer(PageSerializer):

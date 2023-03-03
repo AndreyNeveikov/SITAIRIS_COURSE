@@ -4,8 +4,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from core.permissions import IsAdmin, IsModerator, IsOwner
 from user.models import User
-from user.permissions import IsAdmin, IsOwner, IsModerator
 from user.serializers import (RegistrationSerializer,
                               LoginSerializer,
                               RefreshTokenSerializer,

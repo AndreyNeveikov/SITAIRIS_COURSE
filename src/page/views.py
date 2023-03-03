@@ -14,6 +14,8 @@ from page.serializers import (PageCreateSerializer, PageOwnerSerializer,
                               AcceptFollowRequestSerializer,
                               DeclineFollowRequestSerializer)
 from page.services import TagService, PageService
+from post.models import Post
+from post.serializers import PostSerializer
 
 
 class PageViewSet(mixins.CreateModelMixin,
@@ -98,3 +100,9 @@ class PageViewSet(mixins.CreateModelMixin,
     def decline_follow_request(self, request, *args, **kwargs):
         return self.follow_request(request, *args, **kwargs,
                                    serializer=DeclineFollowRequestSerializer)
+
+    @action(detail=True, methods=['get'], url_path='posts')
+    def get_page_posts(self, request, pk):
+        posts = Post.objects.filter(page=pk)
+        serializer = PostSerializer(instance=posts, many=True)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)

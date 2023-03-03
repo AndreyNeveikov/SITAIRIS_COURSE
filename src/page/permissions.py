@@ -13,13 +13,6 @@ class IsPageOwner(BasePermission):
         return obj.owner == request.user
 
 
-class IsNotPageOwner(BasePermission):
-    message = 'You cannot follow your page.'
-
-    def has_object_permission(self, request, view, obj):
-        return obj.owner != request.user
-
-
 class PageIsNotPrivateOrFollower(BasePermission):
     message = 'This page is private.'
 

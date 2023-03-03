@@ -2,26 +2,19 @@ from rest_framework import mixins, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.viewsets import GenericViewSet
 
 from core.constants import Roles
-from page.models import Page, Tag
-from page.permissions import (IsPageOwner, PageIsNotPrivateOrFollower,
-                              IsNotPageOwner, PageIsNotBlocked)
-from page.serializers import (PageCreateSerializer, TagSerializer,
-                              PageOwnerSerializer, BlockPageSerializer,
-                              FullPageSerializer, PageSerializer,
-                              PageUpdateSerializer,
+from page.models import Page
+from page.permissions import (IsPageOwner, PageIsNotBlocked,
+                              PageIsNotPrivateOrFollower)
+from page.serializers import (PageCreateSerializer, PageOwnerSerializer,
+                              BlockPageSerializer, FullPageSerializer,
+                              PageSerializer, PageUpdateSerializer,
                               AcceptFollowRequestSerializer,
                               DeclineFollowRequestSerializer)
 from page.services import TagService, PageService
 from user.permissions import IsModerator, IsAdmin
-
-
-class TagViewSet(ModelViewSet):
-    queryset = Tag.objects.all()
-    serializer_class = TagSerializer
-    permission_classes = [IsAuthenticated]
 
 
 class PageViewSet(mixins.CreateModelMixin,
@@ -37,7 +30,7 @@ class PageViewSet(mixins.CreateModelMixin,
         'partial_update': [IsAuthenticated, PageIsNotBlocked, IsPageOwner],
         'list': [IsAuthenticated, IsAdmin | IsModerator],
         'block_page': [IsAuthenticated, IsAdmin | IsModerator],
-        'follow': [IsAuthenticated, PageIsNotBlocked, IsNotPageOwner],
+        'follow': [IsAuthenticated, PageIsNotBlocked],
         'accept_follow_request': [IsAuthenticated, IsPageOwner],
         'decline_follow_request': [IsAuthenticated, IsPageOwner],
     }
@@ -51,7 +44,9 @@ class PageViewSet(mixins.CreateModelMixin,
         return PageSerializer
 
     def get_permissions(self):
-        permissions = self.permission_action_classes.get(self.action)
+        permissions = self.permission_action_classes.get(
+            self.action, [IsAuthenticated]
+        )
         return [permission() for permission in permissions]
 
     def create(self, request, *args, **kwargs):

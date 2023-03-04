@@ -95,8 +95,3 @@ class PageViewSet(mixins.CreateModelMixin,
         posts = Post.objects.filter(page=pk)
         serializer = PostSerializer(instance=posts, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
-
-
-class FeedViewSet(mixins.ListModelMixin,
-                  GenericViewSet):
-    ...

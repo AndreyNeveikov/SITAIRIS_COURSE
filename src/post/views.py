@@ -1,7 +1,8 @@
-from rest_framework import status
+from django.db.models import Q
+from rest_framework import status, mixins
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from core.permissions import IsAdmin, IsModerator, IsAuthAndNotBlocked
 from post.models import Post
@@ -33,6 +34,9 @@ class PostViewSet(ModelViewSet):
         )
         return [permission() for permission in permissions_for_action]
 
+    def get_serializer_class(self):
+        return self.serializer_action_classes.get(self.action, PostSerializer)
+
     @action(detail=True, methods=['get'])
     def like(self, request, *args, **kwargs):
         post = self.get_object()
@@ -58,3 +62,19 @@ class PostViewSet(ModelViewSet):
         like_users_list = post.liked_by.all()
         serializer = UserSerializer(instance=like_users_list, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+
+class FeedViewSet(mixins.ListModelMixin,
+                  GenericViewSet):
+    permission_classes = [IsAuthAndNotBlocked]
+    serializer_class = PostSerializer
+    queryset = Post.objects.all()
+
+    def get_queryset(self):
+        return Post.objects.filter(
+            Q(page__followers=self.request.user) |
+            Q(page__owner=self.request.user)
+        ).exclude(
+            page__is_blocked=True,
+            page__owner__is_blocked=True
+        ).order_by('-created_at')

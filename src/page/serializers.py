@@ -48,9 +48,9 @@ class PageSerializer(serializers.ModelSerializer):
                   'owner', 'followers', 'image', 'is_private')
 
     def to_representation(self, instance):
-        if isinstance(self, (FullPageSerializer, PageOwnerSerializer)):
-            return super().to_representation(instance)
         user = self.context['request'].user
+        if user.is_staff or isinstance(self, PageOwnerSerializer):
+            return super().to_representation(instance)
         if user in instance.followers.all() or not instance.is_private:
             return super().to_representation(instance)
         ret = {'is_private': instance.is_private}

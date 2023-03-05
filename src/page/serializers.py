@@ -1,9 +1,5 @@
-from collections import OrderedDict
-
 from rest_framework import serializers
-from rest_framework.permissions import IsAuthenticated
 
-from core.constants import Roles
 from core.serializers import ImageInternalValueMixin
 from page.models import Page, Tag
 from page.services import PageService, TagService
@@ -44,32 +40,22 @@ class PageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Page
-        fields = ('id', 'name', 'uuid', 'description', 'tags',
-                  'owner', 'followers', 'image', 'is_private')
-
-    def to_representation(self, instance):
-        user = self.context['request'].user
-        if user.is_staff or isinstance(self, PageOwnerSerializer):
-            return super().to_representation(instance)
-        if user in instance.followers.all() or not instance.is_private:
-            return super().to_representation(instance)
-        ret = {'is_private': instance.is_private}
-        return ret
-
-
-class FullPageSerializer(PageSerializer):
-    class Meta:
-        model = Page
         fields = ('id', 'name', 'uuid', 'description', 'tags', 'owner',
                   'followers', 'image', 'is_private', 'follow_requests',
                   'is_blocked', 'unblock_date')
 
-
-class PageOwnerSerializer(PageSerializer):
-    class Meta:
-        model = Page
-        fields = ('id', 'name', 'uuid', 'description', 'tags', 'owner',
-                  'followers', 'image', 'is_private', 'follow_requests')
+    def to_representation(self, instance):
+        user = self.context['request'].user
+        ret = super().to_representation(instance)
+        if user.is_staff or instance.owner == user:
+            return ret
+        elif user in instance.followers.all() or not instance.is_private:
+            for key in ['follow_requests', 'is_blocked', 'unblock_date']:
+                ret.pop(key)
+            return ret
+        else:
+            ret = {'id': instance.id, 'is_private': instance.is_private}
+            return ret
 
 
 class BlockPageSerializer(serializers.ModelSerializer):

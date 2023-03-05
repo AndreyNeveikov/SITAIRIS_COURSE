@@ -3,12 +3,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from core.constants import Roles
 from core.permissions import IsAdmin, IsModerator, IsAuthAndNotBlocked
 from page.models import Page
 from page.permissions import IsPageOwner, PageIsNotBlocked
-from page.serializers import (PageCreateSerializer, PageOwnerSerializer,
-                              BlockPageSerializer, FullPageSerializer,
+from page.serializers import (PageCreateSerializer, BlockPageSerializer,
                               PageSerializer, PageUpdateSerializer,
                               AcceptFollowRequestSerializer,
                               DeclineFollowRequestSerializer)
@@ -41,14 +39,7 @@ class PageViewSet(mixins.CreateModelMixin,
     }
 
     def get_serializer_class(self):
-        if self.action in self.serializer_action_classes:
-            return self.serializer_action_classes.get(self.action)
-        if self.request.user.role in (Roles.MODERATOR.value,
-                                      Roles.ADMIN.value):
-            return FullPageSerializer
-        if self.request.user == self.get_object().owner:
-            return PageOwnerSerializer
-        return PageSerializer
+        return self.serializer_action_classes.get(self.action, PageSerializer)
 
     def get_permissions(self):
         permissions = self.permission_action_classes.get(

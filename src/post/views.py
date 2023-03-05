@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from core.permissions import IsAdmin, IsModerator, IsAuthAndNotBlocked
+from core.tasks import send_email
 from post.models import Post
 from post.permissions import IsPostOwner
 from post.serializers import (PostSerializer, PostCreateSerializer,
@@ -36,6 +37,10 @@ class PostViewSet(ModelViewSet):
 
     def get_serializer_class(self):
         return self.serializer_action_classes.get(self.action, PostSerializer)
+
+    def perform_create(self, serializer):
+        serializer.save()
+        send_email.delay(serializer.data)
 
     @action(detail=True, methods=['get'])
     def like(self, request, *args, **kwargs):

@@ -5,6 +5,7 @@ import boto3
 from botocore.exceptions import ClientError
 from django.conf import settings
 
+from page.models import Page
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.INFO,
@@ -95,3 +96,31 @@ class LocalstackManager:
     def create_object_url(key):
         url = f'http://0.0.0.0:{settings.PORT_EXTERNAL}/{settings.BUCKET_NAME}/{key}'
         return url
+
+    @staticmethod
+    def send_email(data):
+        client = LocalstackManager.get_client('ses')
+        page = Page.objects.prefetch_related('followers').get(id=data['page'])
+        if not page.followers.all():
+            return None
+        email_list = list(page.followers.values_list('email', flat=True))
+        user = page.owner
+        subject = f'Innotter: {user.username} created a new post!'
+        message = f'User {user.username} created a new post: {data["content"]}'
+        response = client.send_email(
+            Source=settings.EMAIL_HOST_USER,
+            Destination={
+                'ToAddresses': email_list,
+            },
+            Message={
+                'Subject': {
+                    'Data': subject,
+                },
+                'Body': {
+                    'Text': {
+                        'Data': message,
+                    },
+                }
+            },
+        )
+        return response

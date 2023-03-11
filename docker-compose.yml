@@ -12,10 +12,10 @@ services:
     env_file:
       - .env
     depends_on:
+      - rabbitmq3
       - db
       - redis
       - localstack
-      - rabbitmq3
 
   db:
     image: postgres
@@ -49,9 +49,12 @@ services:
   rabbitmq3:
     image: rabbitmq:3-management-alpine
     container_name: rabbitmq3
-    environment:
-      - "RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}"
-      - "RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}"
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 10s
+      timeout: 4s
+    env_file:
+      - .env
     ports:
       - "${RABBITMQ_PORT}:${RABBITMQ_PORT}"
       - "${RABBITMQ_MANAGEMENT_PORT}:${RABBITMQ_MANAGEMENT_PORT}"
@@ -64,6 +67,22 @@ services:
     depends_on:
       - rabbitmq3
       - web
+
+  microservice:
+    build: ./src/microservice/
+    container_name: microservice
+    entrypoint: ./entrypoint_microservice.sh
+    restart: always
+    volumes:
+      - ./src/microservice/:/code/src/microservice/
+    env_file:
+      - .env
+    ports:
+      - "8001:8001"
+#    depends_on:
+#      - localstack
+#      - rabbitmq3
+#      - web
 
 volumes:
   pgdata:

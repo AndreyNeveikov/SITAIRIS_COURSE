@@ -1,4 +1,6 @@
+import json
 import logging
+import os
 
 import boto3
 from botocore.exceptions import ClientError
@@ -8,12 +10,10 @@ import settings
 logger = logging.getLogger()
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s: %(levelname)s: %(message)s')
+LAMBDA_ZIP = './lambda/lambda.zip'
 
 
-class StatisticsRepository:
-    def __init__(self):
-        self.table = self.get_table()
-
+class LocalstackManager:
     @staticmethod
     def __get_credentials():
         """
@@ -28,21 +28,26 @@ class StatisticsRepository:
         }
         return credentials
 
-    def __get_client(self, client_name):
+    def _get_client(self, client_name):
         credentials = self.__get_credentials()
         client = boto3.client(service_name=client_name,
                               **credentials)
         return client
 
-    def __get_resource(self, resource_name):
+    def _get_resource(self, resource_name):
         credentials = self.__get_credentials()
         resource = boto3.resource(service_name=resource_name,
                                   **credentials)
         return resource
 
+
+class LocalstackDynamoDB(LocalstackManager):
+    def __init__(self):
+        self.table = self.get_table()
+
     def get_table(self):
-        resource = self.__get_resource('dynamodb')
-        client = self.__get_client('dynamodb')
+        resource = self._get_resource('dynamodb')
+        client = self._get_client('dynamodb')
 
         try:
             logger.info('Trying to create table...')
@@ -95,13 +100,85 @@ class StatisticsRepository:
         return response.get('Items', [])
 
 
+class LocalstackLambda(LocalstackManager):
+    @staticmethod
+    def create_lambda_zip():
+        """
+        Generate ZIP file for lambda function.
+        """
+        # write down in console: zip -r lambda.zip .
+
+    def create_lambda(self, function_name):
+        """
+        Creates a Lambda function in LocalStack.
+        """
+        try:
+            lambda_client = self._get_client('lambda')
+            with open(LAMBDA_ZIP, 'rb') as f:
+                zipped_code = f.read()
+            lambda_client.create_function(
+                FunctionName=function_name,
+                Runtime='python3.8',
+                Role='role',
+                Handler=function_name + '.handler',
+                Code=dict(ZipFile=zipped_code),
+                Environment={
+                    'Variables': {
+                        'LOCALSTACK': 'True',
+                        'AWS_ACCESS_KEY_ID': settings.AWS_ACCESS_KEY_ID,
+                        'AWS_SECRET_ACCESS_KEY': settings.AWS_SECRET_ACCESS_KEY,
+                        'AWS_REGION': settings.REGION_NAME,
+                    }
+                }
+            )
+        except Exception as e:
+            logger.exception('Error while creating function.')
+
+    def delete_lambda(self, function_name):
+        """
+        Deletes the specified lambda function.
+        """
+        try:
+            lambda_client = self._get_client('lambda')
+            lambda_client.delete_function(
+                FunctionName=function_name
+            )
+            # remove the lambda function zip file
+            os.remove(LAMBDA_ZIP)
+        except Exception as e:
+            logger.exception('Error while deleting lambda function')
+            raise e
+
+    def invoke_function(self, function_name):
+        """
+        Invokes the specified function and returns the result.
+        """
+        try:
+            lambda_client = self._get_client('lambda')
+            response = lambda_client.invoke(
+                FunctionName=function_name,
+                InvocationType='Event'
+            )
+            logger.info(response)
+            # return json.loads(
+            #     response['Payload']
+            #     .read()
+            #     .decode('utf-8')
+            # )
+        except Exception as e:
+            logger.exception('Error while invoking function')
+            raise e
+
+
 class StatisticService:
     @staticmethod
     def get_statistics(page_id):
-        return StatisticsRepository().get_item(page_id)
+        return LocalstackDynamoDB().get_item(page_id)
 
     @staticmethod
     def create_statistics(page_model):
-        return StatisticsRepository.put_item(page_model)
+        return LocalstackDynamoDB().put_item(page_model)
 
-
+# LocalstackLambda().create_lambda('handler')
+# LocalstackLambda().invoke_function('handler')
+# LocalstackLambda().delete_lambda('handler')

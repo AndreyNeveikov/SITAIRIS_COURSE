@@ -1,8 +1,8 @@
-import json
 import logging
 import os
 
 import boto3
+from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
 import settings
@@ -58,6 +58,17 @@ class LocalstackDynamoDB(LocalstackManager):
                 ],
                 AttributeDefinitions=[
                     {'AttributeName': 'page_id', 'AttributeType': 'S'},
+                    {'AttributeName': 'user_uuid', 'AttributeType': 'S'}
+                ],
+                GlobalSecondaryIndexes=[
+                    {'IndexName': 'user_uuid-index',
+                     'KeySchema': [
+                         {'AttributeName': 'user_uuid', 'KeyType': 'HASH'},
+                         {'AttributeName': 'page_id', 'KeyType': 'RANGE'}],
+                     'Projection': {'ProjectionType': 'ALL'},
+                     'ProvisionedThroughput': {'ReadCapacityUnits': 5,
+                                               'WriteCapacityUnits': 5}
+                     }
                 ],
                 ProvisionedThroughput={'ReadCapacityUnits': 10,
                                        'WriteCapacityUnits': 10})
@@ -68,8 +79,19 @@ class LocalstackDynamoDB(LocalstackManager):
             logger.info('Get table by name.')
         return table
 
-    def put_item(self, page: dict):
-        response = self.table.put_item(Item=page)
+    def query(self, user_uuid):
+        table = self.get_table()
+        items = table.query(
+            IndexName='user_uuid-index',
+            KeyConditionExpression=Key('user_uuid').eq(user_uuid))
+        return items.get('Items', [])
+
+    def delete_table(self):
+        client = self._get_client('dynamodb')
+        client.delete_table(TableName=settings.DYNAMODB_TABLE_NAME)
+
+    def put_item(self, page_id: dict):
+        response = self.table.put_item(Item=page_id)
         return response
 
     def get_item(self, page_id: str):
@@ -132,7 +154,7 @@ class LocalstackLambda(LocalstackManager):
                 }
             )
         except Exception as e:
-            logger.exception('Error while creating function.')
+            logger.exception(e)
 
     def delete_lambda(self, function_name):
         """
@@ -160,11 +182,6 @@ class LocalstackLambda(LocalstackManager):
                 InvocationType='Event'
             )
             logger.info(response)
-            # return json.loads(
-            #     response['Payload']
-            #     .read()
-            #     .decode('utf-8')
-            # )
         except Exception as e:
             logger.exception('Error while invoking function')
             raise e
@@ -172,13 +189,5 @@ class LocalstackLambda(LocalstackManager):
 
 class StatisticService:
     @staticmethod
-    def get_statistics(page_id):
-        return LocalstackDynamoDB().get_item(page_id)
-
-    @staticmethod
-    def create_statistics(page_model):
-        return LocalstackDynamoDB().put_item(page_model)
-
-# LocalstackLambda().create_lambda('handler')
-# LocalstackLambda().invoke_function('handler')
-# LocalstackLambda().delete_lambda('handler')
+    def get_statistics(user_uuid):
+        return LocalstackDynamoDB().query(user_uuid)

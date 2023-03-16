@@ -8,9 +8,10 @@ class StatisticsRouter:
     def router(self):
         api_router = APIRouter(prefix='/statistics', tags=['statistics'])
 
-        @api_router.get('/{page_id}')
-        async def get_statistics(request: Request, page_id):
-            print(request.state.user_uuid)
-            return StatisticService.get_statistics(page_id)
+        @api_router.get('/')
+        async def get_statistics(request: Request):
+            user_uuid = request.state.user_uuid
+            statistics = StatisticService.get_statistics(user_uuid)
+            return statistics
 
         return api_router

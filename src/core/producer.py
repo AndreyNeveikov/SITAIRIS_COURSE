@@ -29,13 +29,15 @@ def publish(body):
 def send_statistics(instance):
     if isinstance(instance, Post):
         instance = instance.page
+    user_uuid = instance.owner.uuid
     page_id = instance.id
     likes = instance.posts.aggregate(Sum('liked_by')).get('liked_by__sum')
     likes_count = int(likes) if likes else 0
     posts = instance.posts.count()
     followers = instance.followers.count()
     follow_requests = instance.follow_requests.count()
-    statistics = {'page_id': str(page_id),
+    statistics = {'user_uuid': str(user_uuid),
+                  'page_id': str(page_id),
                   'likes': str(likes_count),
                   'posts': str(posts),
                   'followers': str(followers),

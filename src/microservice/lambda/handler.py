@@ -1,10 +1,5 @@
-import asyncio
 import json
 import logging
-
-import aio_pika
-
-from aio_pika import abc
 
 from pika import BlockingConnection, ConnectionParameters, PlainCredentials
 from services import LocalstackDynamoDB
@@ -35,4 +30,3 @@ def handler(event, context):
     channel.basic_consume(queue=RABBIT_STATISTIC_QUEUE,
                           on_message_callback=callback, auto_ack=True)
     channel.start_consuming()
-

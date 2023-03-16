@@ -20,6 +20,8 @@ class BaseTokenService:
                 key=settings.ACCESS_TOKEN_KEY,
                 algorithms=settings.JWT_ALGORITHM
             )
+            return True
+
         except jwt.ExpiredSignatureError as e:
             raise HTTPException(status_code=401, detail=str(e))
 

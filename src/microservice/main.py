@@ -2,11 +2,13 @@ import time
 
 from fastapi import FastAPI
 
+from middleware import MyMiddleware
 from router import StatisticsRouter
 from services import LocalstackLambda
 
 app = FastAPI()
 
+app.add_middleware(MyMiddleware)
 app.include_router(StatisticsRouter().router)
 
 

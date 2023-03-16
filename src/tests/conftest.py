@@ -5,10 +5,12 @@ from pytest_factoryboy import register
 from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
 
-from tests.innotter.factories import UserFactory
+from tests.innotter.factories import UserFactory, PageFactory, TagFactory
 
 register(UserFactory, 'user')
 register(UserFactory, 'admin', role='admin', is_staff=True, is_superuser=True)
+register(PageFactory, 'page')
+register(TagFactory, 'tag')
 
 
 @fixture
@@ -17,66 +19,36 @@ def client():
 
 
 @fixture
-def user_client(user_and_access_token):
-    client = APIClient()
-    user, access = user_and_access_token()
-    client.credentials(Authorization=f'Bearer {access}')
-    return user, client
-
-
-@fixture
-def admin_client(user_and_access_token):
-    client = APIClient()
-    user, access = user_and_access_token(is_admin=True)
-    client.credentials(Authorization=f'Bearer {access}')
-    return user, client
-
-
-@fixture
-def user_and_access_token(user, admin):
-    def wrapper(is_admin=False):
-        access_payload = {
-            'token_type': 'access',
-            'exp': settings.ACCESS_TOKEN_LIFETIME,
-            'user_uuid': str(admin.uuid if is_admin else user.uuid)
-        }
-
-        access_token = jwt.encode(payload=access_payload,
-                                  key=settings.ACCESS_TOKEN_KEY,
-                                  algorithm=settings.JWT_ALGORITHM)
-        return user, access_token
+def get_auth_client():
+    def wrapper(user):
+        client = APIClient()
+        access = get_access_token(user)
+        client.credentials(Authorization=f'Bearer {access}')
+        return client
 
     return wrapper
 
 
-@fixture
-def user_and_refresh_token(user, admin):
-    def wrapper(is_admin=False):
-        refresh_payload = {
-            'token_type': 'refresh',
-            'exp': settings.REFRESH_TOKEN_LIFETIME,
-            'user_uuid': str(admin.uuid if is_admin else user.uuid)
-        }
-
-        refresh_token = jwt.encode(payload=refresh_payload,
-                                   key=settings.REFRESH_TOKEN_KEY,
-                                   algorithm=settings.JWT_ALGORITHM)
-        return user, refresh_token
-
-    return wrapper
+def get_access_token(user):
+    access_payload = {
+        'token_type': 'access',
+        'exp': settings.ACCESS_TOKEN_LIFETIME,
+        'user_uuid': str(user.uuid)
+    }
+    access_token = jwt.encode(payload=access_payload,
+                              key=settings.ACCESS_TOKEN_KEY,
+                              algorithm=settings.JWT_ALGORITHM)
+    return access_token
 
 
 @fixture
-def auto_login(db, client, user, admin):
-    def wrapper(is_admin=False):
-        url = reverse("user-login")
-        response = client.post(
-            path=url,
-            data={"email": admin.email if is_admin else user.email,
-                  "password": "password"}
-        )
-        refresh_token = response.data["refresh"]
+def refresh_token(db, client, user):
+    url = reverse("user-login")
+    response = client.post(
+        path=url,
+        data={"email": user.email,
+              "password": "password"}
+    )
+    refresh_token = response.data["refresh"]
 
-        return refresh_token
-
-    return wrapper
+    return refresh_token

@@ -18,7 +18,7 @@ class BaseTokenService:
         if validated_data:
             self.token = validated_data.get(self.TOKEN_TYPE, None)
         elif request:
-            self.token = request.headers.get('Authorization', None)
+            self.token = request.headers.get('Authorization', None) or request.META.get('Authorization', None)
         self.__payload = None
 
     def is_valid(self):

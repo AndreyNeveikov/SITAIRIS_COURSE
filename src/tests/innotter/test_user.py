@@ -1,8 +1,5 @@
-import json
-
 import pytest
 from rest_framework.reverse import reverse
-from rest_framework.test import APIClient
 
 from user.models import User
 
@@ -57,29 +54,30 @@ class TestUserViewSet:
         assert 'refresh' not in response.data
 
     @pytest.mark.django_db
-    def test_refresh_token(self, client, auto_login):
+    def test_refresh_token(self, client, refresh_token):
         url = reverse('user-refresh')
-        refresh = auto_login()
         response = client.post(path=url,
-                               data={'refresh': f'Bearer {refresh}'},
+                               data={'refresh': f'Bearer {refresh_token}'},
                                format='json')
         assert response.status_code == 200
         assert 'access' in response.data
         assert 'refresh' in response.data
 
     @pytest.mark.django_db
-    def test_user_update(self, user_client):
-        user, client = user_client
+    def test_user_update(self, user, get_auth_client):
+        client = get_auth_client(user)
+        username_before_update = user.username
         url = reverse('user-detail', kwargs={"pk": user.id})
         response = client.patch(path=url,
                                 data={"username": "another_username"})
         user.refresh_from_db()
         assert response.status_code == 200
+        assert user.username != username_before_update
         assert user.username == "another_username"
 
     @pytest.mark.django_db
-    def test_success_block_user(self, admin_client, user):
-        admin, client = admin_client
+    def test_success_block_user(self, admin, get_auth_client, user):
+        client = get_auth_client(admin)
         url = reverse('user-block-user', kwargs={"pk": user.id})
         response = client.post(path=url)
         user.refresh_from_db()
@@ -87,8 +85,8 @@ class TestUserViewSet:
         assert user.is_blocked is True
 
     @pytest.mark.django_db
-    def test_fail_block_user(self, user_client):
-        user, client = user_client
+    def test_fail_block_user(self, user, get_auth_client):
+        client = get_auth_client(user)
         url = reverse('user-block-user', kwargs={"pk": user.id})
         response = client.post(path=url)
         assert response.status_code == 403

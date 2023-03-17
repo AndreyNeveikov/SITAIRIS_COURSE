@@ -150,7 +150,7 @@ class TestPageViewSet:
         assert user_1 in page_2.followers.all()
 
     @pytest.mark.django_db
-    def test_accept_follow_request(self, page_factory, get_auth_client):
+    def test_decline_follow_request(self, page_factory, get_auth_client):
         page_1, page_2 = page_factory(), page_factory(is_private=True)
         user_1, user_2 = page_1.owner, page_2.owner
         client_1, client_2 = get_auth_client(user_1), get_auth_client(user_2)

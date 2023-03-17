@@ -1,8 +1,9 @@
 import factory
+from faker import Faker
 
 from page.models import Page, Tag
+from post.models import Post
 from user.models import User
-from faker import Faker
 
 fake = Faker()
 
@@ -15,8 +16,8 @@ class UserFactory(factory.django.DjangoModelFactory):
     email = factory.Faker('email')
     password = factory.PostGenerationMethodCall('set_password', 'password')
     role = 'user'
-    is_staff = True
-    is_superuser = True
+    is_staff = False
+    is_superuser = False
 
 
 class TagFactory(factory.django.DjangoModelFactory):
@@ -52,3 +53,13 @@ class PageFactory(factory.django.DjangoModelFactory):
         if extracted:
             for _ in range(extracted):
                 self.tags.add(TagFactory())
+
+
+class PostFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Post
+
+    page = factory.SubFactory(PageFactory)
+    content = factory.Faker('sentence')
+    created_at = factory.Faker('past_datetime')
+    updated_at = factory.Faker('date_time')

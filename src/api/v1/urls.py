@@ -7,9 +7,9 @@ from post.views import PostViewSet, FeedViewSet
 
 router = DefaultRouter()
 router.register(r'', BaseSearch, basename='search')
-router.register(r'user', UserViewSet)
-router.register(r'page', PageViewSet)
-router.register(r'post', PostViewSet)
-router.register(r'feed', FeedViewSet)
+router.register(r'user', UserViewSet, basename='user')
+router.register(r'page', PageViewSet, basename='page')
+router.register(r'post', PostViewSet, basename='post')
+router.register(r'feed', FeedViewSet, basename='feed')
 
 urlpatterns = router.urls

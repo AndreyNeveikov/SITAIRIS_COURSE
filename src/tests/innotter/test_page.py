@@ -168,3 +168,13 @@ class TestPageViewSet:
         assert response_2.status_code == 200
         assert user_1 not in page_2.followers.all()
         assert user_1 not in page_2.follow_requests.all()
+
+    @pytest.mark.django_db
+    def test_retrieve_private_page_by_not_follower(self, user, page_factory,
+                                                   get_auth_client):
+        page = page_factory.create(is_private=True)
+        url = reverse('page-detail', kwargs={"pk": page.id})
+        client = get_auth_client(user)
+        response = client.get(path=url)
+        assert response.status_code == 200
+        assert 'uuid' not in response.data

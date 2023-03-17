@@ -5,12 +5,14 @@ from pytest_factoryboy import register
 from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
 
-from tests.innotter.factories import UserFactory, PageFactory, TagFactory
+from tests.innotter.factories import UserFactory, PageFactory, TagFactory, \
+    PostFactory
 
 register(UserFactory, 'user')
 register(UserFactory, 'admin', role='admin', is_staff=True, is_superuser=True)
 register(PageFactory, 'page')
 register(TagFactory, 'tag')
+register(PostFactory, 'post')
 
 
 @fixture

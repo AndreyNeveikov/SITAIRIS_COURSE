@@ -6,21 +6,30 @@ from pika import BlockingConnection, ConnectionParameters, PlainCredentials
 
 from post.models import Post
 
-credentials = PlainCredentials(
-    username=settings.RABBITMQ_DEFAULT_USER,
-    password=settings.RABBITMQ_DEFAULT_PASS
-)
-connection = BlockingConnection(
-    ConnectionParameters(host=settings.RABBITMQ_HOST,
-                         credentials=credentials,
-                         heartbeat=600,
-                         blocked_connection_timeout=300)
-)
-channel = connection.channel()
-channel.queue_declare(queue=settings.RABBIT_STATISTIC_QUEUE)
+
+def get_connection():
+    credentials = PlainCredentials(
+        username=settings.RABBITMQ_DEFAULT_USER,
+        password=settings.RABBITMQ_DEFAULT_PASS
+    )
+    connection = BlockingConnection(
+        ConnectionParameters(host=settings.RABBITMQ_HOST,
+                             credentials=credentials,
+                             heartbeat=600,
+                             blocked_connection_timeout=300)
+    )
+    return connection
+
+
+def get_channel():
+    connection = get_connection()
+    channel = connection.channel()
+    channel.queue_declare(queue=settings.RABBIT_STATISTIC_QUEUE)
+    return channel
 
 
 def publish(body):
+    channel = get_channel()
     channel.basic_publish(exchange='',
                           routing_key=settings.RABBIT_STATISTIC_QUEUE,
                           body=json.dumps(body).encode())

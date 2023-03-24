@@ -4,10 +4,10 @@ import pytest
 from rest_framework.reverse import reverse
 
 
+@pytest.mark.django_db
 class TestPageViewSet:
-    @pytest.mark.django_db
-    def test_success_page_create(self, user, get_auth_client, page_factory,
-                                 tag):
+    def test_success_page_create(self, user, get_auth_client,
+                                 page_factory, tag):
         url = reverse('page-list')
         client = get_auth_client(user)
         page = page_factory.build()
@@ -24,7 +24,6 @@ class TestPageViewSet:
         assert response.data['tags'] == [tag.id]
         assert response.data['owner'] == user.id
 
-    @pytest.mark.django_db
     def test_fail_page_create(self, user, get_auth_client, page_factory):
         url = reverse('page-list')
         client = get_auth_client(user)
@@ -35,7 +34,6 @@ class TestPageViewSet:
                                format='json')
         assert response.status_code == 400
 
-    @pytest.mark.django_db
     def test_page_update(self, user, get_auth_client, page):
         url = reverse('page-detail', kwargs={'pk': page.id})
         page_name_before_update = page.name
@@ -47,29 +45,26 @@ class TestPageViewSet:
         assert response.status_code == 200
         assert page_name_before_update != page.name
 
-    @pytest.mark.django_db
     def test_page_retrieve(self, user, get_auth_client, page):
         url = reverse('page-detail', kwargs={'pk': page.id})
         client = get_auth_client(user)
         response = client.get(path=url)
         assert response.status_code == 200
 
-    @pytest.mark.django_db
     def test_success_page_list_for_admin(self, admin, get_auth_client):
         url = reverse('page-list')
         client = get_auth_client(admin)
         response = client.get(path=url)
         assert response.status_code == 200
 
-    @pytest.mark.django_db
     def test_fail_page_list_for_user(self, user, get_auth_client):
         url = reverse('page-list')
         client = get_auth_client(user)
         response = client.get(path=url)
         assert response.status_code == 403
 
-    @pytest.mark.django_db
-    def test_success_page_block_for_admin(self, admin, get_auth_client, page):
+    def test_success_page_block_for_admin(self, admin, get_auth_client,
+                                          page, mock_block_task):
         url = reverse('page-block-page', kwargs={"pk": page.id})
         client = get_auth_client(admin)
         page_status_before_block = page.is_blocked
@@ -83,7 +78,6 @@ class TestPageViewSet:
         assert page.is_blocked is True
         assert page.is_blocked != page_status_before_block
 
-    @pytest.mark.django_db
     def test_fail_page_block_for_user(self, user, get_auth_client, page):
         url = reverse('page-block-page', kwargs={"pk": page.id})
         client = get_auth_client(user)
@@ -94,7 +88,6 @@ class TestPageViewSet:
                                format='json')
         assert response.status_code == 403
 
-    @pytest.mark.django_db
     def test_retrieve_blocked_page(self, user, get_auth_client, page_factory):
         page = page_factory(is_blocked=True)
         url = reverse('page-detail', kwargs={"pk": page.id})
@@ -102,7 +95,6 @@ class TestPageViewSet:
         response = client.get(path=url)
         assert response.status_code == 403
 
-    @pytest.mark.django_db
     def test_follow_public_page(self, page_factory, get_auth_client):
         page_1, page_2 = page_factory(), page_factory()
         user_1, user_2 = page_1.owner, page_2.owner
@@ -115,7 +107,6 @@ class TestPageViewSet:
         assert response.status_code == 202
         assert user_1 in page_2.followers.all()
 
-    @pytest.mark.django_db
     def test_follow_private_page(self, page_factory, get_auth_client):
         page_1, page_2 = page_factory(), page_factory(is_private=True)
         user_1, user_2 = page_1.owner, page_2.owner
@@ -129,7 +120,6 @@ class TestPageViewSet:
         assert user_1 not in page_2.followers.all()
         assert user_1 in page_2.follow_requests.all()
 
-    @pytest.mark.django_db
     def test_accept_follow_request(self, page_factory, get_auth_client):
         page_1, page_2 = page_factory(), page_factory(is_private=True)
         user_1, user_2 = page_1.owner, page_2.owner
@@ -149,7 +139,6 @@ class TestPageViewSet:
         assert response_2.status_code == 200
         assert user_1 in page_2.followers.all()
 
-    @pytest.mark.django_db
     def test_decline_follow_request(self, page_factory, get_auth_client):
         page_1, page_2 = page_factory(), page_factory(is_private=True)
         user_1, user_2 = page_1.owner, page_2.owner
@@ -169,7 +158,6 @@ class TestPageViewSet:
         assert user_1 not in page_2.followers.all()
         assert user_1 not in page_2.follow_requests.all()
 
-    @pytest.mark.django_db
     def test_retrieve_private_page_by_not_follower(self, user, page_factory,
                                                    get_auth_client):
         page = page_factory.create(is_private=True)

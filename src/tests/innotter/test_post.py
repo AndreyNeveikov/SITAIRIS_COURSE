@@ -6,7 +6,8 @@ from post.models import Post
 
 @pytest.mark.django_db
 class TestPostViewSet:
-    def test_success_post_create(self, get_auth_client, page, post_factory):
+    def test_success_post_create(self, get_auth_client, page,
+                                 post_factory, mock_send_email):
         url = reverse('post-list')
         post = post_factory.build()
         client = get_auth_client(page.owner)

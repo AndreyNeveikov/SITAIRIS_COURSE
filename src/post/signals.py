@@ -11,5 +11,5 @@ def post_create_update_handler(instance: Post, *args, **kwargs):
 
 
 @receiver(signal=m2m_changed, sender=Post.liked_by.through)
-def post_m2m_change_handler(instance: Post, *args, **kwargs):
+def post_m2m_change_liked_by_handler(instance: Post, *args, **kwargs):
     send_statistics(instance)

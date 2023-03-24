@@ -11,10 +11,10 @@ def page_create_update_handler(instance, *args, **kwargs):
 
 
 @receiver(signal=m2m_changed, sender=Page.followers.through)
-def post_m2m_change_handler(instance, *args, **kwargs):
+def page_m2m_change_followers_handler(instance, *args, **kwargs):
     send_statistics(instance)
 
 
 @receiver(signal=m2m_changed, sender=Page.follow_requests.through)
-def post_m2m_change_handler(instance, *args, **kwargs):
+def page_m2m_change_follow_requests_handler(instance, *args, **kwargs):
     send_statistics(instance)

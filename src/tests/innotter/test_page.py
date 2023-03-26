@@ -97,7 +97,7 @@ class TestPageViewSet:
 
     def test_follow_public_page(self, page_factory, get_auth_client):
         page_1, page_2 = page_factory(), page_factory()
-        user_1, user_2 = page_1.owner, page_2.owner
+        user_1 = page_1.owner
         client_1 = get_auth_client(user_1)
 
         url = reverse('page-follow', kwargs={"pk": page_2.id})
@@ -109,7 +109,7 @@ class TestPageViewSet:
 
     def test_follow_private_page(self, page_factory, get_auth_client):
         page_1, page_2 = page_factory(), page_factory(is_private=True)
-        user_1, user_2 = page_1.owner, page_2.owner
+        user_1 = page_1.owner
         client_1 = get_auth_client(user_1)
 
         url = reverse('page-follow', kwargs={"pk": page_2.id})

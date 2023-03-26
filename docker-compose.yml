@@ -49,10 +49,6 @@ services:
   rabbitmq3:
     image: rabbitmq:3-management-alpine
     container_name: rabbitmq3
-    healthcheck:
-      test: rabbitmq-diagnostics check_port_connectivity
-      interval: 10s
-      timeout: 4s
     env_file:
       - .env
     ports:

@@ -19,12 +19,14 @@ pipeline {
                 }
                 stage('Autoformat') {
                     steps {
-                        sh 'poetry isort'
+                        sh 'isort .'
+                        sh 'black .'
+
                     }
                 }
                 stage('Lint') {
                     steps {
-                        sh 'poetry run flake8'
+                        sh 'flake8'
                     }
                 }
             }

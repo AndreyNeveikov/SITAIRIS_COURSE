@@ -1,19 +1,32 @@
 pipeline {
     agent any
     stages {
-        stage('Build and test the project') {
-            steps {
-                sh 'docker-compose down'
+        stage('Build') {
+            agent {
+                docker {
+                    image 'python:3.10'
+                    args "--user root --privileged"
+                }
+            }
+            stages {
+                stage('Build') {
+                    steps {
+                        sh 'pip install --upgrade pip'
+                        sh 'pip install poetry'
+                        sh 'poetry config virtualenvs.create false'
+                        sh 'poetry install --no-interaction'
+                    }
+                }
+                stage('Linter') {
+                    steps {
+                        sh 'poetry run flake8'
+                    }
+                }
             }
         }
-        stage('Run tests') {
+        stage('Testing') {
             steps {
-                sh 'docker-compose run web pytest src/tests'
-            }
-        }
-        stage('Down') {
-            steps {
-                sh 'docker-compose down'
+                sh 'docker-compose run web pytest src/tests/'
             }
         }
     }

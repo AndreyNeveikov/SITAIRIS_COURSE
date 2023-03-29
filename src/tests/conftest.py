@@ -57,11 +57,6 @@ def refresh_token(user):
     return refresh_token
 
 
-@fixture(scope='session')
-def django_db_modify_db_settings():
-    settings.DATABASES['default']['HOST'] = '0.0.0.0'
-
-
 @fixture(autouse=True)
 def mock_producer_publish(mocker):
     mocker.patch('core.producer.publish', Mock())

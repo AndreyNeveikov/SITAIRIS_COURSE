@@ -23,4 +23,3 @@ class NoTokenError(APIException):
         'Authorization not found. Please send valid token in headers'
     )
     default_code = 'authentication_failed'
-

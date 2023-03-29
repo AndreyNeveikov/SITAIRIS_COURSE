@@ -28,5 +28,3 @@ class PostUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = ('id', 'content', 'reply_to')
-
-

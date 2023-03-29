@@ -9,7 +9,7 @@ pipeline {
                 }
             }
             stages {
-                stage('Build') {
+                stage('Install dependencies') {
                     steps {
                         sh 'pip install --upgrade pip'
                         sh 'pip install poetry'
@@ -17,7 +17,12 @@ pipeline {
                         sh 'poetry install --no-interaction'
                     }
                 }
-                stage('Linter') {
+                stage('Autoformat') {
+                    steps {
+                        sh 'poetry isort'
+                    }
+                }
+                stage('Lint') {
                     steps {
                         sh 'poetry run flake8'
                     }

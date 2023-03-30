@@ -5,6 +5,7 @@ services:
     build: ./
     container_name: web
     restart: always
+    entrypoint: ./entrypoint.sh
     volumes:
       - .:/code
     ports:
@@ -18,7 +19,7 @@ services:
       - localstack
 
   db:
-    image: postgres
+    image: postgres:latest
     container_name: db
     restart: always
     volumes:
@@ -33,7 +34,7 @@ services:
     container_name: redis
     command: redis-server
     ports:
-      - "14000:6379"
+      - "6379:6379"
 
   localstack:
     image: localstack/localstack
@@ -52,8 +53,8 @@ services:
     env_file:
       - .env
     ports:
-      - "${RABBITMQ_PORT}:${RABBITMQ_PORT}"
-      - "${RABBITMQ_MANAGEMENT_PORT}:${RABBITMQ_MANAGEMENT_PORT}"
+      - "5672:5672"
+      - "15672:15672"
 
   celery:
     build: .

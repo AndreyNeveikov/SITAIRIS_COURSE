@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: entrypoint-localstack
+  namespace: innotter-project
+data:
+  entrypoint_localstack.sh: |
+    #!/bin/bash
+    chmod 777 /etc/localstack/init/ready.d/entrypoint_localstack.sh
+    aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+    aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+    aws configure set region_name $REGION_NAME
+    aws --endpoint-url $HOSTNAME_EXTERNAL:$PORT_EXTERNAL s3 mb s3://$BUCKET_NAME
+    aws ses verify-email-identity --email-address ${EMAIL_HOST_USER} --endpoint-url=${HOSTNAME_EXTERNAL}:${PORT_EXTERNAL} --region ${REGION_NAME}

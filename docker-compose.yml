@@ -5,7 +5,7 @@ services:
     build: ./
     container_name: web
     restart: always
-    entrypoint: ./entrypoint.sh
+    entrypoint: ./entrypoint.sh web
     volumes:
       - .:/code
     ports:
@@ -30,7 +30,7 @@ services:
       - .env
 
   redis:
-    image: redis
+    image: redis:latest
     container_name: redis
     command: redis-server
     ports:
@@ -59,7 +59,7 @@ services:
   celery:
     build: .
     container_name: celery
-    entrypoint: ./entrypoint_celery.sh
+    entrypoint: ./entrypoint.sh celery
     restart: always
     depends_on:
       - rabbitmq3

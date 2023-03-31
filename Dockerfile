@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.10-slim
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
@@ -18,14 +18,3 @@ RUN poetry install --no-interaction
 
 # Creating folders, and files for a project:
 COPY . .
-
-## Run entrypoint.sh
-#RUN chmod +x entrypoint.sh
-#CMD ["bash", "entrypoint.sh"]
-
-
-
-
-
-
-

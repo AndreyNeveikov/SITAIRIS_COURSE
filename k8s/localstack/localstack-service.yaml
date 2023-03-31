@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: localstack
+  namespace: innotter-project
+  labels:
+    app: localstack
+spec:
+  selector:
+    app: localstack
+  ports:
+  - name: localstack-port
+    port: 4566
+    targetPort: 4566

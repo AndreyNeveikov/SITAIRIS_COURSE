@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: localstack-deployment
+  namespace: innotter-project
+  labels:
+    app: localstack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: localstack
+  template:
+    metadata:
+      labels:
+        app: localstack
+    spec:
+      hostname: localstack
+      containers:
+        - name: localstack
+          image: localstack/localstack:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 4566
+          envFrom:
+            - secretRef:
+                name: innotter-secret
+          securityContext:
+            runAsUser: 1000
+          volumeMounts:
+            - name: entrypoint
+              mountPath: /etc/localstack/init/ready.d/
+      volumes:
+        - name: entrypoint
+          configMap:
+            name: entrypoint-localstack
+            defaultMode: 0777

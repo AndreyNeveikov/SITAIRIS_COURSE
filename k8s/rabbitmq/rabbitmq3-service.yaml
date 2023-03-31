@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq3
+  namespace: innotter-project
+  labels:
+    app: rabbitmq3
+spec:
+  selector:
+    app: rabbitmq3
+  ports:
+  - name: rabbitmq-port
+    port: 5672
+  - name: rabbitmq-management-port
+    port: 15672

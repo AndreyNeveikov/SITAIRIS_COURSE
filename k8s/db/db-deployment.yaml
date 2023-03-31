@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-deployment
+  namespace: innotter-project
+  labels:
+    app: db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+        - name: db
+          image: postgres:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5432
+              name: db
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: pgdata
+          envFrom:
+            - secretRef:
+                name: innotter-secret
+      restartPolicy: Always
+      volumes:
+        - name: pgdata

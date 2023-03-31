@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-deployment
+  namespace: innotter-project
+  labels:
+    app: celery
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: celery
+  template:
+    metadata:
+      labels:
+        app: celery
+    spec:
+      containers:
+        - name: celery
+          image: kirylofficial/innotter
+          imagePullPolicy: Always
+          command: ["/bin/sh"]
+          args: ["-c", "cd src/ && celery -A innotter worker -l info"]
+          envFrom:
+            - secretRef:
+                name: innotter-secret

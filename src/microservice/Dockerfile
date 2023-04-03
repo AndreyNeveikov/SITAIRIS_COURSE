@@ -18,14 +18,3 @@ RUN poetry install --no-interaction
 
 # Creating folders, and files for a project:
 COPY . .
-
-### Run entrypoint.sh
-#RUN chmod +x entrypoint.sh
-#CMD ["bash", "./entrypoint_microservice.sh"]
-
-
-
-
-
-
-

@@ -10,7 +10,7 @@ import settings
 logger = logging.getLogger()
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s: %(levelname)s: %(message)s')
-LAMBDA_ZIP = './lambda/lambda.zip'
+LAMBDA_ZIP = 'lambda/lambda.zip'
 
 
 class LocalstackManager:
@@ -134,14 +134,17 @@ class LocalstackLambda(LocalstackManager):
         """
         Creates a Lambda function in LocalStack.
         """
+        logger.info('-----CREATE LAMBDA FUNCTION-----')
         try:
             lambda_client = self._get_client('lambda')
+            logger.info('-----GET LAMBDA CLIENT-----')
             with open(LAMBDA_ZIP, 'rb') as f:
                 zipped_code = f.read()
+            logger.info('-----TRY TO CREATE FUNCTION-----')
             lambda_client.create_function(
                 FunctionName=function_name,
                 Runtime='python3.8',
-                Role='role',
+                Role='arn:aws:iam::000000000000:role/lambda-role',
                 Handler=function_name + '.handler',
                 Code=dict(ZipFile=zipped_code),
                 Environment={

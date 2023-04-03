@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: microservice-deployment
+  namespace: innotter-project
+  labels:
+    app: microservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: microservice
+  template:
+    metadata:
+      labels:
+        app: microservice
+    spec:
+      containers:
+        - name: web
+          image: kirylofficial/microservice
+          imagePullPolicy: Always
+          command: ["/bin/sh"]
+          args: ["-c", "uvicorn main:app --host 127.0.0.1 --port 8001"]
+          ports:
+            - containerPort: 8001
+          envFrom:
+            - secretRef:
+                name: innotter-secret

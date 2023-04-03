@@ -2,6 +2,7 @@ version: "3.1"
 
 services:
   web:
+#    image: kirylofficial/innotter
     build: ./
     container_name: web
     restart: always
@@ -61,11 +62,14 @@ services:
     container_name: celery
     entrypoint: ./entrypoint.sh celery
     restart: always
+    env_file:
+      - .env
     depends_on:
       - rabbitmq3
       - web
 
   microservice:
+#    image: kirylofficial/microservice
     build: ./src/microservice/
     container_name: microservice
     entrypoint: ./entrypoint_microservice.sh

@@ -15,6 +15,10 @@ spec:
       labels:
         app: celery
     spec:
+      initContainers:
+        - name: init-redis-service
+          image: busybox:1.28
+          command: [ 'sh', '-c', "until nslookup redis.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for redis-service; sleep 2; done" ]
       containers:
         - name: celery
           image: kirylofficial/innotter

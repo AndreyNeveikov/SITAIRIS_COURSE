@@ -18,7 +18,7 @@ spec:
       hostname: localstack
       containers:
         - name: localstack
-          image: localstack/localstack:latest
+          image: localstack/localstack
           imagePullPolicy: Always
           ports:
             - containerPort: 4566
@@ -30,8 +30,14 @@ spec:
           volumeMounts:
             - name: entrypoint
               mountPath: /etc/localstack/init/ready.d/
+            - name: docker-sock
+              mountPath: /var/run/docker.sock
       volumes:
         - name: entrypoint
           configMap:
             name: entrypoint-localstack
             defaultMode: 0777
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+

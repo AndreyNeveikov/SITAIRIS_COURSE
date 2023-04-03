@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: microservice
+  namespace: innotter-project
+  labels:
+    app: microservice
+spec:
+  selector:
+    app: microservice
+  ports:
+  - name: microservice-port
+    port: 8001
+    targetPort: 8001

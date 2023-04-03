@@ -15,8 +15,14 @@ spec:
       labels:
         app: microservice
     spec:
+      initContainers:
+        - name: check-rabbitmq-ready
+          image: busybox
+          command: ['sh', '-c',
+                    'until wget http://admin:admin@rabbitmq3:15672/api/aliveness-test/%2F;
+                    do echo waiting for rabbitmq; sleep 2; done;']
       containers:
-        - name: web
+        - name: microservice
           image: kirylofficial/microservice
           imagePullPolicy: Always
           command: ["/bin/sh"]

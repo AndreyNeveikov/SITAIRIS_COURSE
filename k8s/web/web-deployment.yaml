@@ -18,9 +18,9 @@ spec:
       initContainers:
         - name: init-postgres-service
           image: postgres:latest
-          command: [ 'sh', '-c',
-            'until pg_isready -h db.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local -p 5432;
-          do echo waiting for database; sleep 2; done;' ]
+          command: ['sh', '-c',
+                    'until pg_isready -h db.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local -p 5432;
+                    do echo waiting for database; sleep 2; done;']
       containers:
         - name: web
           image: kirylofficial/innotter
@@ -32,10 +32,3 @@ spec:
           envFrom:
             - secretRef:
                 name: innotter-secret
-          readinessProbe:
-            tcpSocket:
-              port: 8000
-          livenessProbe:
-            tcpSocket:
-              port: 8000
-            periodSeconds: 15

@@ -20,16 +20,16 @@ async def consume():
     channel = await connection.channel()
     await channel.set_qos(prefetch_count=10)
     queue = await channel.declare_queue(RABBIT_STATISTIC_QUEUE)
+
+    async def callback(message: abc.AbstractIncomingMessage):
+        async with message.process():
+            try:
+                message = json.loads(message.body.decode())
+                logger.info(f"Message received: {message}")
+                LocalstackLambda().invoke_function(function_name='handler',
+                                                   payload=json.dumps(
+                                                       message).encode('utf-8'))
+            except Exception as e:
+                logger.error(e)
+
     await queue.consume(callback)
-
-
-async def callback(message: abc.AbstractIncomingMessage):
-    async with message.process():
-        try:
-            message = json.loads(message.body.decode())
-            logger.info(f"Message received: {message}")
-            LocalstackLambda().invoke_function(function_name='handler',
-                                               payload=json.dumps(
-                                                   message).encode('utf-8'))
-        except Exception as e:
-            logger.error(e)

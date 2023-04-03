@@ -1,7 +1,7 @@
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from jwt_service import BaseTokenService
+from services import BaseTokenService
 
 
 class MyMiddleware(BaseHTTPMiddleware):

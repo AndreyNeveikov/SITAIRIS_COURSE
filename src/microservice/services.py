@@ -2,8 +2,10 @@ import logging
 import os
 
 import boto3
+import jwt
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
+from fastapi import HTTPException
 
 import settings
 
@@ -174,7 +176,7 @@ class LocalstackLambda(LocalstackManager):
             logger.exception('Error while deleting lambda function')
             raise e
 
-    def invoke_function(self, function_name):
+    def invoke_function(self, function_name, payload: bytes):
         """
         Invokes the specified function and returns the result.
         """
@@ -182,7 +184,8 @@ class LocalstackLambda(LocalstackManager):
             lambda_client = self._get_client('lambda')
             response = lambda_client.invoke(
                 FunctionName=function_name,
-                InvocationType='Event'
+                InvocationType='Event',
+                Payload=payload
             )
             logger.info(response)
         except Exception as e:
@@ -194,3 +197,32 @@ class StatisticService:
     @staticmethod
     def get_statistics(user_uuid):
         return LocalstackDynamoDB().query(user_uuid)
+
+
+class BaseTokenService:
+    def __init__(self, request):
+        self.token = request.headers.get('authorization', None)
+        self.__payload = None
+
+    def is_valid(self):
+        if not (self.token and
+                self.token.startswith(settings.AUTH_HEADER_PREFIX)):
+            raise HTTPException(status_code=401, detail='Token is not valid')
+
+        try:
+            self.__payload = jwt.decode(
+                jwt=self.token.replace(settings.AUTH_HEADER_PREFIX, ''),
+                key=settings.ACCESS_TOKEN_KEY,
+                algorithms=settings.JWT_ALGORITHM
+            )
+            return True
+
+        except jwt.ExpiredSignatureError as e:
+            raise HTTPException(status_code=401, detail=str(e))
+
+        except (jwt.InvalidTokenError, jwt.DecodeError) as e:
+            raise HTTPException(status_code=401, detail=str(e))
+
+    def get_user_uuid_from_payload(self):
+        uuid = self.__payload.get('user_uuid')
+        return uuid

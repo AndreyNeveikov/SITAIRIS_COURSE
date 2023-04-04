@@ -2,11 +2,12 @@ version: "3.1"
 
 services:
   web:
-#    image: kirylofficial/innotter
-    build: ./
+    image: kirylofficial/innotter
+#    build: ./
     container_name: web
     restart: always
-    entrypoint: ./entrypoint.sh web
+    entrypoint: ./entrypoint.sh
+    command: ["web"]
     volumes:
       - .:/code
     ports:
@@ -46,7 +47,7 @@ services:
       - .env
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - "./entrypoint_localstack.sh:/docker-entrypoint-initaws.d/entrypoint_localstack.sh"
+      - "./entrypoint_localstack.sh:/etc/localstack/init/ready.d/entrypoint_localstack.sh"
 
   rabbitmq3:
     image: rabbitmq:3-management-alpine
@@ -58,9 +59,11 @@ services:
       - "15672:15672"
 
   celery:
-    build: .
+    image: kirylofficial/innotter
+#    build: .
     container_name: celery
     entrypoint: ./entrypoint.sh celery
+    command: ["celery"]
     restart: always
     env_file:
       - .env

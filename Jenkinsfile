@@ -33,7 +33,8 @@ pipeline {
         }
         stage('Testing') {
             steps {
-                sh 'docker-compose run web pytest src/tests/'
+                sh 'docker-compose run web test'
+                sh 'docker-compose down'
             }
         }
     }

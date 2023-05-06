@@ -2,7 +2,7 @@ version: "3.1"
 
 services:
   web:
-#    image: kirylofficial/innotter
+#    image: andreyneveykov/innotter
     build: ./
     container_name: web
     restart: always
@@ -59,8 +59,8 @@ services:
       - "15672:15672"
 
   celery:
-    image: kirylofficial/innotter
-#    build: .
+#    image: andreyneveykov/innotter
+    build: .
     container_name: celery
     entrypoint: ./entrypoint.sh celery
     command: ["celery"]
@@ -72,7 +72,7 @@ services:
       - web
 
   microservice:
-#    image: kirylofficial/microservice
+#    image: andreyneveykov/microservice
     build: ./src/microservice/
     container_name: microservice
     entrypoint: ./entrypoint_microservice.sh

@@ -73,7 +73,8 @@ class LocalstackDynamoDB(LocalstackManager):
                      }
                 ],
                 ProvisionedThroughput={'ReadCapacityUnits': 10,
-                                       'WriteCapacityUnits': 10})
+                                       'WriteCapacityUnits': 10}
+            )
             logger.info('Table successfully created.')
         except client.exceptions.ResourceInUseException:
             logger.info('Table has already exists.')

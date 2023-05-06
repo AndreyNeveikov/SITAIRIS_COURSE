@@ -49,6 +49,7 @@ INSTALLED_APPS = [
 
     # third-party apps
     'rest_framework',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -171,3 +172,12 @@ RABBIT_STATISTIC_QUEUE = os.getenv("RABBIT_STATISTIC_QUEUE")
 CELERY_BROKER_URL = f"{RABBITMQ_PROTOCOL}://{RABBITMQ_DEFAULT_USER}:" \
                     f"{RABBITMQ_DEFAULT_PASS}@{RABBITMQ_HOST}:{RABBITMQ_PORT}"
 CELERY_IMPORTS = ('core.tasks',)
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'basic': {
+            'type': 'basic'
+        }
+    },
+    'LOGIN_URL': '/api/v1/user/login/',
+}

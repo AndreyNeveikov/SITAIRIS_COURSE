@@ -6,7 +6,7 @@ from page.views import PageViewSet
 from post.views import PostViewSet, FeedViewSet
 
 router = DefaultRouter()
-router.register(r'', BaseSearch, basename='search')
+router.register(r'search', BaseSearch, basename='search')
 router.register(r'user', UserViewSet, basename='user')
 router.register(r'page', PageViewSet, basename='page')
 router.register(r'post', PostViewSet, basename='post')

@@ -15,7 +15,7 @@ export default function Login() {
     dispatch({ type: "LOGIN_START" });
     try {
       const res = await axios.post(
-          "http://0.0.0.0:8000/api/v1/user/login/", {
+          "user/login/", {
         email: userRef.current.value,
         password: passwordRef.current.value,
       });

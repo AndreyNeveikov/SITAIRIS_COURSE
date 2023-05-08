@@ -23,7 +23,7 @@ spec:
                     do echo waiting for rabbitmq; sleep 2; done;']
       containers:
         - name: microservice
-          image: kirylofficial/microservice
+          image: andreyneveykov/microservice
           imagePullPolicy: Always
           command: ["/bin/sh"]
           args: ["-c", "uvicorn main:app --host 127.0.0.1 --port 8001"]

@@ -34,6 +34,12 @@ class PageUpdateSerializer(PageCreateSerializer):
         return super().to_internal_value(data)
 
 
+class PageImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Page
+        fields = ('image',)
+
+
 class PageSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     owner = UserSerializer(read_only=True)

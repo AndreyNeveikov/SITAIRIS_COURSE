@@ -8,6 +8,7 @@ import Register from "./pages/register/Register";
 import Single from "./pages/single/Single";
 import {useContext} from "react"
 import {Context} from "./context/Context"
+import {ToastContainer} from "react-toastify";
 
 function App() {
   const {user} = useContext(Context);
@@ -15,6 +16,7 @@ function App() {
   return (
     <Router>
     <TopBar/>
+        <ToastContainer />
     <Routes>
         <Route exact path="/" element={<Homepage />}/>
         <Route path="/posts" element={<Homepage />}/>

@@ -14,13 +14,17 @@ export default function Login() {
     e.preventDefault();
     dispatch({ type: "LOGIN_START" });
     try {
-      const res = await axios.post(
-          "user/login/", {
+      let res = await axios.post(
+          "http://localhost:8000/api/v1/user/login/", {
         email: userRef.current.value,
         password: passwordRef.current.value,
       });
-      Cookies.set('Authorization', res.data("token"));
-      dispatch({ type: "LOGIN_SUCCESS", payload: res.data });
+      console.log(res.data.access)
+      Cookies.set('Authorization', res.data?.access);
+      const res1 = await axios.get(
+          "http://localhost:8000/api/v1/user/me/", {headers:
+            {"Authorization": `Bearer ${res.data?.access}`}});
+      dispatch({ type: "LOGIN_SUCCESS", payload: res1.data });
     } catch (err) {
       dispatch({ type: "LOGIN_FAILURE" });
     }

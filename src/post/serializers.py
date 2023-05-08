@@ -1,5 +1,5 @@
 from rest_framework import serializers
-
+from page.serializers import PageImageSerializer
 from post.models import Post
 
 
@@ -8,6 +8,14 @@ class PostSerializer(serializers.ModelSerializer):
         model = Post
         fields = ('id', 'page', 'content', 'reply_to',
                   'created_at', 'updated_at', 'liked_by')
+
+
+# class PostSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         image = PageImageSerializer()
+#         model = Post
+#         fields = ('id', 'page', 'content', 'reply_to',
+#                   'created_at', 'updated_at', 'liked_by', 'image')
 
 
 class PostCreateSerializer(serializers.ModelSerializer):

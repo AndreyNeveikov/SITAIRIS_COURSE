@@ -21,7 +21,7 @@ spec:
           command: [ 'sh', '-c', "until nslookup redis.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for redis-service; sleep 2; done" ]
       containers:
         - name: celery
-          image: kirylofficial/innotter
+          image: andreyneveykov/innotter
           imagePullPolicy: Always
           command: ["/bin/sh"]
           args: ["-c", "cd src/ && celery -A innotter worker -l info"]

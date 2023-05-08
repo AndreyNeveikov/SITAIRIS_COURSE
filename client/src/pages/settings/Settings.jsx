@@ -27,20 +27,22 @@ export default function Settings() {
       const data = new FormData();
       const filename = Date.now() + file.name;
       data.append("name", filename);
-      data.append("file", file);
+      data.append("image", file);
       updatedUser.profilePic = filename;
       try {
-        await axios.post("/upload", data);
+        await axios.post("http://localhost:8000/api/v1/user/" + user.id, data);
       } catch (err) {}
     }
     try {
-      const res = await axios.put("/users/" + user._id, updatedUser);
+      const res = await axios.put("http://localhost:8000/api/v1/user/" + user.id, updatedUser);
       setSuccess(true);
       dispatch({ type: "UPDATE_SUCCESS", payload: res.data });
     } catch (err) {
       dispatch({ type: "UPDATE_FAILURE" });
     }
   };
+
+  console.log('u', user)
   return (
     <div className="settings">
       <div className="settingsWrapper">
@@ -52,7 +54,7 @@ export default function Settings() {
           <label>Profile Picture</label>
           <div className="settingsPP">
           <img
-              src={file ? URL.createObjectURL(file) : (PF + user.profilePic)}
+              src={file ? URL.createObjectURL(file) : (user.image)}
               alt=""
             />
             <label htmlFor="fileInput">

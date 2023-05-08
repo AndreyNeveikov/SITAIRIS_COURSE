@@ -3,6 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
+from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 
 from core.permissions import IsAdmin, IsModerator, IsAuthAndNotBlocked
 from user.models import User
@@ -21,6 +23,7 @@ class UserViewSet(mixins.RetrieveModelMixin,
                   GenericViewSet):
     queryset = User.objects.all()
     permission_action_classes = {
+        'me': [AllowAny],
         'create': [AllowAny],
         'login': [AllowAny],
         'refresh': [AllowAny],
@@ -69,3 +72,10 @@ class UserViewSet(mixins.RetrieveModelMixin,
         response = admin_service.get_block_status_response()
         return Response(data=response,
                         status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'])
+    def me(self, request):
+        User = get_user_model()
+        self.object = get_object_or_404(User, pk=request.user.id)
+        serializer = self.get_serializer(self.object)
+        return Response(serializer.data)

@@ -7,6 +7,8 @@ import Single from "../single/Single";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router";
+import Cookies from 'js-cookie';
+
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
@@ -14,7 +16,8 @@ export default function Home() {
 
   useEffect(() => {
     const fetchPosts = async () => {
-      const res = await axios.get("/posts" + search);
+      const res = await axios.get("http://localhost:8000/api/v1/feed/", {headers:
+            {"Authorization": `Bearer ${Cookies.get("Authorization")}`}});
       setPosts(res.data);
     };
     fetchPosts();

@@ -39,9 +39,15 @@ export default function Sidebar() {
       <div className="sidebarItem">
         <span className="sidebarTitle">FOLLOW ME</span>
         <div className="sidebarSocial">
-            <i class="sidebarIcon fab fa-vk"></i>
-            <i class="sidebarIcon fab fa-github"></i>
-            <i class="sidebarIcon fab fa-instagram"></i>
+            <a href="https://vk.com/andrenalin_n">
+                <i className="sidebarIcon fab fa-vk"></i>
+            </a>
+            <a href="https://github.com/AndreyNeveikov">
+                <i className="sidebarIcon fab fa-github"></i>
+            </a>
+            <a href="https://www.instagram.com/andrenalin_n/">
+                <i className="sidebarIcon fab fa-instagram"></i>
+            </a>
         </div>
       </div>
     </div>

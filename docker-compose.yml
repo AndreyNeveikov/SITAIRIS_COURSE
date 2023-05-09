@@ -60,7 +60,7 @@ services:
 
   celery:
 #    image: andreyneveykov/innotter
-    build: .
+    build: ./
     container_name: celery
     entrypoint: ./entrypoint.sh celery
     command: ["celery"]

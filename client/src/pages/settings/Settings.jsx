@@ -26,7 +26,7 @@ export default function Settings() {
     if (file) {
       const data = new FormData();
       const filename = Date.now() + file.name;
-      data.append("name", filename);
+      // data.append("name", filename);
       data.append("image", file);
       updatedUser.profilePic = filename;
       try {

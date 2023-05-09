@@ -19,7 +19,6 @@ export default function Login() {
         email: userRef.current.value,
         password: passwordRef.current.value,
       });
-      console.log(res.data.access)
       Cookies.set('Authorization', res.data?.access);
       const res1 = await axios.get(
           "http://localhost:8000/api/v1/user/me/", {headers:

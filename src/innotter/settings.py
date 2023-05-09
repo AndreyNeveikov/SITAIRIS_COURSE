@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'post',
 
     # third-party apps
+    'corsheaders',
     'rest_framework',
     'drf_yasg',
 ]

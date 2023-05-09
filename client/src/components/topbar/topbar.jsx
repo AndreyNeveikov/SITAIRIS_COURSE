@@ -13,9 +13,15 @@ export default function Topbar() {
     return (
         <div className="top">
             <div className='topLeft'>
-                <i class="topIcon fab fa-vk"></i>
-                <i class="topIcon fab fa-github"></i>
-                <i class="topIcon fab fa-instagram"></i>
+                <a href="https://vk.com/andrenalin_n">
+                    <i className="topIcon fab fa-vk"></i>
+                </a>
+                <a href="https://github.com/AndreyNeveikov">
+                    <i className="topIcon fab fa-github"></i>
+                </a>
+                <a href="https://www.instagram.com/andrenalin_n/">
+                    <i className="topIcon fab fa-instagram"></i>
+                </a>
             </div>
 
             <div className='topCenter'>

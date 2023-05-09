@@ -22,8 +22,8 @@ export default function Sidebar() {
           alt=""
         />
         <p>
-          Hi there! It's my first blog app. 
-          Hope u'll enjoy my project!
+          Hi there! This is my first project
+            as a full stack developer!
         </p>
       </div>
       <div className="sidebarItem">

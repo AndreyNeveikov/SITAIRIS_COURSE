@@ -35,12 +35,6 @@ class PageUpdateSerializer(PageCreateSerializer):
         return super().to_internal_value(data)
 
 
-class PageImageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Page
-        fields = ('image',)
-
-
 class PageWithPostsSerializer(serializers.ModelSerializer):
     posts = PostSerializer(many=True, read_only=True)
 

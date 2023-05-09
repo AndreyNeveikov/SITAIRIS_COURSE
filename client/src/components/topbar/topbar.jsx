@@ -1,15 +1,20 @@
-import { useContext } from "react"
+import {useContext, useState} from "react"
 import {Context} from "../../context/Context"
 import './topbar.css'
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 export default function Topbar() {
     const { user, dispatch } = useContext(Context);
     const PF = "http://localhost:5000/images/"
-  
+    const [query, setQuery] = useState('')
     const handleLogout = () => {
       dispatch({ type: "LOGOUT" });
     };
+
+    const handleSearch = async () => {
+        let res = await axios.get(`http://0.0.0.0:8000/api/v1/search/?search=${query}`)
+    }
     return (
         <div className="top">
             <div className='topLeft'>
@@ -55,8 +60,19 @@ export default function Topbar() {
                          <Link className="link" to="/register"> REGISTER </Link> 
                     </li>
                 </ul>
-                )} 
-                <i className="topSearchIcon fas fa-search"></i>
+                )}
+                <div className="topRight">
+                    <input
+                        type="text"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Search..."
+                    />
+                     <Link to={`/?search=${query}`} className="link">
+                         <i className="topSearchIcon fas fa-search" ></i>
+                     {/*    onClick={handleSearch}*/}
+                     </Link>
+                </div>
             </div>
         </div>
     )

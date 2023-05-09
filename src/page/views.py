@@ -1,18 +1,26 @@
-from rest_framework import mixins, status
+from rest_framework import mixins, status, generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from core.permissions import IsAdmin, IsModerator, IsAuthAndNotBlocked
-from page.models import Page
+from page.models import Page, Tag
 from page.permissions import IsPageOwner, PageIsNotBlocked
 from page.serializers import (PageCreateSerializer, BlockPageSerializer,
                               PageSerializer, PageUpdateSerializer,
                               AcceptFollowRequestSerializer,
-                              DeclineFollowRequestSerializer)
+                              DeclineFollowRequestSerializer, TagSerializer)
 from page.services import PageService
 from post.models import Post
 from post.serializers import PostSerializer
+
+
+class TagViewSet(mixins.CreateModelMixin,
+                 mixins.ListModelMixin,
+                 mixins.RetrieveModelMixin,
+                 GenericViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
 
 
 class PageViewSet(mixins.CreateModelMixin,

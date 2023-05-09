@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import "./register.css";
  import { ToastContainer, toast } from 'react-toastify';
+import Cookies from "js-cookie";
 
 export default function Register() {
   const [username, setUsername] = useState("");
@@ -19,6 +20,18 @@ export default function Register() {
         email,
         password,
       });
+      const res1 = await axios.post("http://localhost:8000/api/v1/user/login/", {
+        email,
+        password,
+      });
+       console.log( res.data.uuid)
+      console.log(res1.data)
+      const res2 = await axios.post("http://localhost:8000/api/v1/page/", {
+        uuid: res.data.uuid,
+        name: username,
+        description: username
+      }, {headers:
+                    {"Authorization": `Bearer ${res1.data.access}`}});
       res.data && window.location.replace("/login");
     } catch (err) {
       setError(true);

@@ -3,6 +3,7 @@ from rest_framework import serializers
 from core.serializers import ImageInternalValueMixin
 from page.models import Page, Tag
 from page.services import PageService, TagService
+from post.serializers import PostSerializer
 from user.serializers import UserSerializer
 
 
@@ -38,6 +39,14 @@ class PageImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Page
         fields = ('image',)
+
+
+class PageWithPostsSerializer(serializers.ModelSerializer):
+    posts = PostSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Page
+        fields = ('id', 'name', 'description', 'posts',)
 
 
 class PageSerializer(serializers.ModelSerializer):

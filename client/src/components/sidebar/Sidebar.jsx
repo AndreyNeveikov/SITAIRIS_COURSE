@@ -16,14 +16,13 @@ export default function Sidebar() {
   return (
     <div className="sidebar">
       <div className="sidebarItem">
-        <span className="sidebarTitle">ABOUT ME</span>
+        <span className="sidebarTitle">ADVERTISEMENT</span>
         <img
-          src="https://i.pinimg.com/564x/6b/48/22/6b4822681acb45a01b63f43ca9335945.jpg"
+          src="https://storage.pravo.ru/image/193/96731.png?v=1676366029"
           alt=""
         />
         <p>
-          Hi there! This is my first project
-            as a full stack developer!
+          Воспользуйтесь новым предложением от наших спосоров!
         </p>
       </div>
       <div className="sidebarItem">
